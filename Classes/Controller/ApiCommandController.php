@@ -21,6 +21,25 @@ class Tx_Coreapi_Controller_ApiCommandController extends Tx_Extbase_MVC_Controll
 		$this->objectManager->get('Tx_Coreapi_Service_CacheApiService')->clearConfigurationCache();
 		return 'OK';
 	}
+
+	/**
+	 * Database Compare
+	 * @return string
+	 */
+	public function databaseCompareCommand() {
+		$service = $this->objectManager->get('Tx_Coreapi_Service_DatabaseApiService');
+		$actions = array(
+			$service::ACTION_UPDATE_CLEAR_TABLE => 1,
+			$service::ACTION_UPDATE_ADD => 1,
+		);
+		$result = $service->databaseCompare($actions);
+		if (empty($result)) {
+			return 'OK';
+		} else {
+			// TODO
+		}
+	}
+
 }
 
 ?>
