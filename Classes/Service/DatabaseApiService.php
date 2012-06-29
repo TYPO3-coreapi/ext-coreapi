@@ -37,7 +37,7 @@ class Tx_Coreapi_Service_DatabaseApiService {
 	const ACTION_REMOVE_CHANGE = 5;
 	const ACTION_REMOVE_DROP = 6;
 	const ACTION_REMOVE_CHANGE_TABLE = 7;
-	const ACTION_REMOVE_DROp_TABLE = 8;
+	const ACTION_REMOVE_DROP_TABLE = 8;
 
 	/**
 	 * @var t3lib_install_Sql Instance of SQL handler
@@ -112,7 +112,7 @@ class Tx_Coreapi_Service_DatabaseApiService {
 				$results[] = $this->sqlHandler->performUpdateQueries($remove_statements['change_table'], $allowedRequestKeys);
 			}
 
-			if ($allowedActions[self::ACTION_REMOVE_DROp_TABLE] == 1) {
+			if ($allowedActions[self::ACTION_REMOVE_DROP_TABLE] == 1) {
 				$results[] = $this->sqlHandler->performUpdateQueries($remove_statements['drop_table'], $allowedRequestKeys);
 			}
 
