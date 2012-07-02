@@ -51,20 +51,41 @@ class Tx_Coreapi_Command_ApiCommandController extends Tx_Extbase_MVC_Controller_
 	}
 
 	/**
-	 * Database Compare
-	 * @return void
+	 * Database compare
+	 * This is some
+	 *
+	 * @param string $actions List of actions which will be executed
 	 */
-	public function databaseCompareCommand() {
+	public function databaseCompareCommand($actions = '') {
+		$availableActions = array_flip($this->objectManager->get('Tx_Extbase_Reflection_ClassReflection', 'Tx_Coreapi_Service_DatabaseApiService')->getConstants());
+
+		if (empty($actions)) {
+			$this->outputLine('Available actions are:');
+			foreach ($availableActions as $number => $action) {
+				if (t3lib_div::isFirstPartOfStr($action, 'ACTION_')) {
+					$this->outputLine('  - ' . $action . ' => ' . $number);
+				}
+			}
+			$this->quit();
+		}
+
 		$service = $this->objectManager->get('Tx_Coreapi_Service_DatabaseApiService');
-		$actions = array(
-			$service::ACTION_UPDATE_CLEAR_TABLE => 1,
-			$service::ACTION_UPDATE_ADD => 1,
-		);
-		$result = $service->databaseCompare($actions);
+		$allowedActions = array();
+		$actionSplit = t3lib_div::trimExplode(',', $actions);
+		foreach($actionSplit as $split) {
+			if (!isset($availableActions[$split])) {
+				$this->output('Action "%s" is not available!', array($split));
+				$this->quit();
+			}
+			$allowedActions[$split] = 1;
+		}
+		
+		$result = $service->databaseCompare($allowedActions);
 		if (empty($result)) {
 			$this->outputLine('DB has been compared');
 		} else {
-			$this->outputLine('DB could not be compared, Errors: %s', $result);
+			$this->outputLine('DB could not be compared, Error(s): %s', array(LF . implode(LF, $result)));
+			$this->quit();
 		}
 	}
 

@@ -30,6 +30,9 @@
  */
 class Tx_Coreapi_Service_DatabaseApiService {
 
+	/**
+	 * UPDATE
+	 */
 	const ACTION_UPDATE_CLEAR_TABLE = 1;
 	const ACTION_UPDATE_ADD = 2;
 	const ACTION_UPDATE_CHANGE = 3;
