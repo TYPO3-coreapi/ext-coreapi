@@ -65,3 +65,5 @@ class Tx_Coreapi_Service_CacheApiService {
 	}
 
 }
+
+?>

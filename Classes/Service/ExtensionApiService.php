@@ -40,3 +40,5 @@ class Tx_Coreapi_Service_ExtensionApiService {
 	extension:refresh           Refreshes the local cache of all extensions available in TER
 */
 }
+
+?>

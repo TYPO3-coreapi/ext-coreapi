@@ -52,7 +52,8 @@ class Tx_Coreapi_Command_ApiCommandController extends Tx_Extbase_MVC_Controller_
 
 	/**
 	 * Database compare
-	 * This is some
+	 *
+	 * Leave the argument 'actions' empty to see the available ones
 	 *
 	 * @param string $actions List of actions which will be executed
 	 */
@@ -79,7 +80,7 @@ class Tx_Coreapi_Command_ApiCommandController extends Tx_Extbase_MVC_Controller_
 			}
 			$allowedActions[$split] = 1;
 		}
-		
+
 		$result = $service->databaseCompare($allowedActions);
 		if (empty($result)) {
 			$this->outputLine('DB has been compared');

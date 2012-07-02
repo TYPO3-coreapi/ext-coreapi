@@ -30,9 +30,6 @@
  */
 class Tx_Coreapi_Service_DatabaseApiService {
 
-	/**
-	 * UPDATE
-	 */
 	const ACTION_UPDATE_CLEAR_TABLE = 1;
 	const ACTION_UPDATE_ADD = 2;
 	const ACTION_UPDATE_CHANGE = 3;
@@ -54,7 +51,6 @@ class Tx_Coreapi_Service_DatabaseApiService {
 		$this->sqlHandler = t3lib_div::makeInstance('t3lib_install_Sql');
 	}
 
-
 	/**
 	 * Database compare
 	 *
@@ -62,6 +58,7 @@ class Tx_Coreapi_Service_DatabaseApiService {
 	 * @return array
 	 */
 	public function databaseCompare(array $allowedActions) {
+		$errors = array();
 		$tblFileContent = t3lib_div::getUrl(PATH_t3lib . 'stddb/tables.sql');
 
 		foreach ($GLOBALS['TYPO3_LOADED_EXT'] as $extKey => $loadedExtConf) {
@@ -75,7 +72,6 @@ class Tx_Coreapi_Service_DatabaseApiService {
 			$fileContent = implode(LF, $this->sqlHandler->getStatementArray($tblFileContent, 1, '^CREATE TABLE '));
 			$FDfile = $this->sqlHandler->getFieldDefinitions_fileContent($fileContent);
 
-			// Init again / first time depending...
 			$FDdb = $this->sqlHandler->getFieldDefinitions_database();
 
 			$diff = $this->sqlHandler->getDatabaseExtra($FDfile, $FDdb);
@@ -118,8 +114,6 @@ class Tx_Coreapi_Service_DatabaseApiService {
 			if ($allowedActions[self::ACTION_REMOVE_DROP_TABLE] == 1) {
 				$results[] = $this->sqlHandler->performUpdateQueries($remove_statements['drop_table'], $allowedRequestKeys);
 			}
-
-			$errors = array();
 
 			foreach ($results as $resultSet) {
 				if (is_array($resultSet)) {
@@ -167,3 +161,5 @@ class Tx_Coreapi_Service_DatabaseApiService {
 	}
 
 }
+
+?>
