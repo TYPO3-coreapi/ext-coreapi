@@ -14,7 +14,7 @@ Checkout the project website at forge.typo3.org:
 	* clearPageCache
 	* clearConfigurationCache
 
-### Sample CLI call: ###
-	
-	./typo3/cli_dispatch.phpsh extbase api:clearAllCache
+### CLI call: ###
+This will show you all available calls
+	./typo3/cli_dispatch.phpsh extbase help
 
