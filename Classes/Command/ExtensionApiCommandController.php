@@ -37,28 +37,18 @@ class Tx_Coreapi_Command_ExtensionApiCommandController extends Tx_Extbase_MVC_Co
 	 * @return void
 	 */
 	public function listInstalledCommand($type = '') {
-		$type = strtoupper($type);
+				$type = strtoupper($type);
 		if (!empty($type) && $type !== 'L' && $type !== 'G' && $type !== 'S') {
 			$this->outputLine('Only "L", "S" and "G" are supported as type (or nothing)');
 			$this->quit();
 		}
 
-		$extensions = $GLOBALS['TYPO3_LOADED_EXT'];
+		/** @var $extensions Tx_Coreapi_Service_ExtensionApiService */
+		$extensions = $this->objectManager->get('Tx_Coreapi_Service_ExtensionApiService')->getInstalledExtensions($type);
 
-		$list = array();
-		foreach ($extensions as $key => $extension) {
-			if (!empty($type) && $type !== $extension['type']) {
-				continue;
-			}
-			$list[$key] = $extension['ext_tables.sql'];
-		}
-
-		ksort($list);
-
-		foreach ($list as $key => $description) {
-			include_once(t3lib_extMgm::extPath($key) . 'ext_emconf.php');
-			$title = $key . ' - ' . $EM_CONF['']['version'] . '/' . $EM_CONF['']['state'];
-			$description = $EM_CONF['']['title'];
+		foreach ($extensions as $key => $details) {
+			$title = $key . ' - ' . $details['version'] . '/' . $details['state'];
+			$description = $details['title'];
 			$description = wordwrap($description, self::MAXIMUM_LINE_LENGTH - 43, PHP_EOL . str_repeat(' ', 43), TRUE);
 			$this->outputLine('%-2s%-40s %s', array(' ', $title, $description));
 		}

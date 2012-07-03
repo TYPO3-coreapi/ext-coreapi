@@ -50,6 +50,7 @@ class Tx_Coreapi_Command_ApiCommandController extends Tx_Extbase_MVC_Controller_
 			$this->quit();
 		}
 
+		/** @var $service Tx_Coreapi_Service_DatabaseApiService */
 		$service = $this->objectManager->get('Tx_Coreapi_Service_DatabaseApiService');
 		$allowedActions = array();
 		$actionSplit = t3lib_div::trimExplode(',', $actions);

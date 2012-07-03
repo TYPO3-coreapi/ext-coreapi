@@ -39,6 +39,24 @@ class Tx_Coreapi_Service_ExtensionApiService {
 	extension:uninstall         Uninstalls an extension
 	extension:refresh           Refreshes the local cache of all extensions available in TER
 */
+
+	public function getInstalledExtensions($type = '') {
+		$extensions = $GLOBALS['TYPO3_LOADED_EXT'];
+
+		$list = array();
+		foreach ($extensions as $key => $extension) {
+			if (!empty($type) && $type !== $extension['type']) {
+				continue;
+			}
+
+			include_once(t3lib_extMgm::extPath($key) . 'ext_emconf.php');
+			$list[$key] = $EM_CONF[''];
+		}
+
+		ksort($list);
+
+		return $list;
+	}
 }
 
 ?>

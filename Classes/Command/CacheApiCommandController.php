@@ -36,7 +36,10 @@ class Tx_Coreapi_Command_CacheApiCommandController extends Tx_Extbase_MVC_Contro
 	 * @return void
 	 */
 	public function clearAllCacheCommand() {
-		$this->objectManager->get('Tx_Coreapi_Service_CacheApiService')->clearAllCaches();
+		/** @var $service Tx_Coreapi_Service_CacheApiService */
+		$service = $this->objectManager->get('Tx_Coreapi_Service_CacheApiService');
+		$service->clearAllCaches();
+
 		$this->outputLine('All caches have been cleared.');
 	}
 
@@ -46,7 +49,10 @@ class Tx_Coreapi_Command_CacheApiCommandController extends Tx_Extbase_MVC_Contro
 	 * @return void
 	 */
 	public function clearConfigurationCacheCommand() {
-		$this->objectManager->get('Tx_Coreapi_Service_CacheApiService')->clearConfigurationCache();
+		/** @var $service Tx_Coreapi_Service_CacheApiService */
+		$service = $this->objectManager->get('Tx_Coreapi_Service_CacheApiService');
+		$service->clearConfigurationCache();
+
 		$this->outputLine('Configuration Cache has been cleared.');
 	}
 
