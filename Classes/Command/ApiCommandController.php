@@ -31,26 +31,6 @@
 class Tx_Coreapi_Command_ApiCommandController extends Tx_Extbase_MVC_Controller_CommandController {
 
 	/**
-	 * Clear all caches
-	 *
-	 * @return void
-	 */
-	public function clearAllCacheCommand() {
-		$this->objectManager->get('Tx_Coreapi_Service_CacheApiService')->clearAllCaches();
-		$this->outputLine('All caches have been cleared.');
-	}
-
-	/**
-	 * Clear configuration cache (temp_CACHED_..)
-	 *
-	 * @return void
-	 */
-	public function clearConfigurationCacheCommand() {
-		$this->objectManager->get('Tx_Coreapi_Service_CacheApiService')->clearConfigurationCache();
-		$this->outputLine('Configuration Cache has been cleared.');
-	}
-
-	/**
 	 * Database compare
 	 *
 	 * Leave the argument 'actions' empty to see the available ones
