@@ -58,7 +58,9 @@ class Tx_Coreapi_Command_SiteApiCommandController extends Tx_Extbase_MVC_Control
 	 * @return void
 	 */
 	public function createSysNewsCommand($header, $text = '') {
-
+		/** @var $service Tx_Coreapi_Service_SiteApiService */
+		$service = $this->objectManager->get('Tx_Coreapi_Service_SiteApiService');
+		$service->createSysNews($header, $text);
 	}
 
 }

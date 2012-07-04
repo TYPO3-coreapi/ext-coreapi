@@ -30,10 +30,6 @@
  */
 class Tx_Coreapi_Service_SiteApiService {
 
-	/*
-	 * site:sysNews					Create a sys news, e.g. for new deployment
-	 */
-
 	/**
 	 * Get some basic site information
 	 *
@@ -49,6 +45,22 @@ class Tx_Coreapi_Service_SiteApiService {
 		$this->getDatabaseInformation($data);
 
 		return $data;
+	}
+
+	/**
+	 * Create a sys news record
+	 *
+	 * @param string $header header
+	 * @param string $text text
+	 * @return void
+	 */
+	public function createSysNews($header, $text) {
+		$GLOBALS['TYPO3_DB']->exec_INSERTquery('sys_news', array(
+			'title' => $header,
+			'content' => $text,
+			'tstamp' => $GLOBALS['EXEC_TIME'],
+			'crdate' => $GLOBALS['EXEC_TIME'],
+		));
 	}
 
 	/**
