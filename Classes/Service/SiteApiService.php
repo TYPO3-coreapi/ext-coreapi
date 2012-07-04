@@ -31,9 +31,53 @@
 class Tx_Coreapi_Service_SiteApiService {
 
 	/*
-	 * site:info					Provides some basic site status (Version, file size ...)
 	 * site:sysNews					Create a sys news, e.g. for new deployment
 	 */
+
+	/**
+	 * Get some basic site information
+	 *
+	 * @return array
+	 */
+	public function getSiteInfo() {
+		$data = array(
+			'TYPO3 version' => TYPO3_version,
+			'Site name' => $GLOBALS['TYPO3_CONF_VARS']['SYS']['sitename'],
+		);
+
+		$this->getDiskUsage($data);
+		$this->getDatabaseInformation($data);
+
+		return $data;
+	}
+
+	/**
+	 * Get disku usage
+	 *
+	 * @author Claus Due <claus@wildside.dk>, Wildside A/S
+	 * @param array $data
+	 * @return void
+	 */
+	protected function getDiskUsage(&$data) {
+		if (TYPO3_OS !== 'WIN') {
+			$data['Combined disk usage'] = trim(array_shift(explode("\t", shell_exec('du -sh ' . PATH_site))));
+		}
+	}
+
+	/**
+	 * Get database size
+	 *
+	 * @author Claus Due <claus@wildside.dk>, Wildside A/S
+	 * @param array $data
+	 * @return void
+	 */
+	protected function getDatabaseInformation(&$data) {
+		$databaseSizeResult = $GLOBALS['TYPO3_DB']->sql_query("SELECT SUM( data_length + index_length ) / 1024 / 1024 AS size FROM information_schema.TABLES WHERE table_schema = '" . TYPO3_db . "'");
+		$databaseSizeRow = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($databaseSizeResult);
+		$databaseSize = array_pop($databaseSizeRow);
+		$value = number_format($databaseSize, ($databaseSize > 10 ? 0 : 1)) . 'M';
+		$data['Database size'] = $value;
+	}
 
 }
 
