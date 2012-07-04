@@ -31,14 +31,34 @@
 class Tx_Coreapi_Service_ExtensionApiService {
 /*
 	extension                   Provides some basic information on the site's extension status
-	extension:info              Fetches the latest (or provided) version of an extension from TER
-	extension:list              Lists all available extensions of a site
+	[x] extension:info              Fetches the latest (or provided) version of an extension from TER
+	[x] extension:list              Lists all available extensions of a site
 	extension:search            Searches for an extension in the TER
 	extension:fetch             Fetches the latest (or provided) version of an extension from TER
 	extension:install           Installs the latest (or provided) version of an extension
 	extension:uninstall         Uninstalls an extension
 	extension:refresh           Refreshes the local cache of all extensions available in TER
 */
+
+	/**
+	 * Get information about an extension
+	 *
+	 * @param string $key extension key
+	 * @return array
+	 */
+	public function getExtensionInformation($key) {
+		if (!$GLOBALS['TYPO3_LOADED_EXT'][$key]) {
+			throw new Exception(sprintf('Extension "%s" not found.', $key));
+		}
+
+		include_once(t3lib_extMgm::extPath($key) . 'ext_emconf.php');
+		$information = array(
+			'em_conf' => $EM_CONF[''],
+			'isLoaded' => t3lib_extMgm::isLoaded($key)
+		);
+
+		return $information;
+	}
 
 	public function getInstalledExtensions($type = '') {
 		$extensions = $GLOBALS['TYPO3_LOADED_EXT'];

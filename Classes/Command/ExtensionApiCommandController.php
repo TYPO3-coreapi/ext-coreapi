@@ -1,5 +1,6 @@
 <?php
-/***************************************************************
+
+/* * *************************************************************
  *  Copyright notice
  *
  *  (c) 2012 Georg Ringer <georg.ringer@cyberhouse.at>
@@ -20,7 +21,7 @@
  *  GNU General Public License for more details.
  *
  *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * ************************************************************* */
 
 /**
  * Extension API Command Controller
@@ -31,13 +32,73 @@
 class Tx_Coreapi_Command_ExtensionApiCommandController extends Tx_Extbase_MVC_Controller_CommandController {
 
 	/**
+	 * Information about an extension
+	 *
+	 * @param string $key extension key
+	 * @return void
+	 */
+	public function infoCommand($key) {
+		$data = array();
+		try {
+			/** @var $service Tx_Coreapi_Service_ExtensionApiService */
+			$service = $this->objectManager->get('Tx_Coreapi_Service_ExtensionApiService');
+			$data = $service->getExtensionInformation($key);
+		} catch (Exception $e) {
+			$this->outputLine($e->getMessage());
+			$this->quit();
+		}
+
+		$this->outputLine('');
+		$this->outputLine('EXTENSION "%s": %s %s', array(strtoupper($key), $data['em_conf']['version'], $data['em_conf']['state']));
+		$this->outputLine(str_repeat('-', self::MAXIMUM_LINE_LENGTH));
+
+		$outputInformation = array();
+		$outputInformation['is installed'] = ($data['is_installed'] ? 'yes' : 'no');
+		foreach($data['em_conf'] as $emConfKey => $emConfValue) {
+				// Skip empty properties
+			if (empty($emConfValue)) {
+				continue;
+			}
+				// Skip properties which are already handled
+			if ($emConfKey === 'title' || $emConfKey === 'version' || $emConfKey === 'state') {
+				continue;
+			}
+			$outputInformation[$emConfKey] = $emConfValue;
+		}
+
+		foreach ($outputInformation as $outputKey => $outputValue) {
+			$description = '';
+			if (is_array($outputValue)) {
+				foreach ($outputValue as $additionalKey => $additionalValue) {
+					if (is_array($additionalValue)) {
+
+						if (empty($additionalValue))  {
+							continue;
+						}
+						$description .= LF . str_repeat(' ', 28) . $additionalKey;
+						$description .= LF;
+						foreach ($additionalValue as $ak => $av) {
+							$description .= str_repeat(' ', 30) . $ak . ': ' . $av . LF;
+						}
+					} else {
+						$description .= LF . str_repeat(' ', 28) . $additionalKey . ': '. $additionalValue;
+					}
+				}
+			} else {
+				$description = wordwrap($outputValue, self::MAXIMUM_LINE_LENGTH - 28, PHP_EOL . str_repeat(' ', 28), TRUE);
+			}
+			$this->outputLine('%-2s%-25s %s', array(' ', $outputKey, $description));
+		}
+	}
+
+	/**
 	 * List all installed extensions
 	 *
 	 * @param string $type Extension type, can either be L for local, S for system or G for global. Leave it empty for all
 	 * @return void
 	 */
 	public function listInstalledCommand($type = '') {
-				$type = strtoupper($type);
+		$type = strtoupper($type);
 		if (!empty($type) && $type !== 'L' && $type !== 'G' && $type !== 'S') {
 			$this->outputLine('Only "L", "S" and "G" are supported as type (or nothing)');
 			$this->quit();
