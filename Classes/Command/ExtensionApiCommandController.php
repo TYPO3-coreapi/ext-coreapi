@@ -60,9 +60,9 @@ class Tx_Coreapi_Command_ExtensionApiCommandController extends Tx_Extbase_MVC_Co
 	 * @return void
 	 */
 	public function updateListCommand() {
-		/** @var $emTask tx_em_Tasks_UpdateExtensionList */
-		$emTask = $this->objectManager->get('tx_em_Tasks_UpdateExtensionList');
-		$emTask->execute();
+		/** @var $service Tx_Coreapi_Service_ExtensionApiService */
+		$service = $this->objectManager->get('Tx_Coreapi_Service_ExtensionApiService');
+		$service->updateMirrors();
 
 		$this->outputLine('Extension list has been updated.');
 	}

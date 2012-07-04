@@ -57,6 +57,18 @@ class Tx_Coreapi_Service_ExtensionApiService {
 
 		return $list;
 	}
+
+	/**
+	 * Update the mirrors, using the scheduler task of EXT:em
+	 *
+	 * @return void
+	 * @see tx_em_Tasks_UpdateExtensionList
+	 */
+	public function updateMirrors() {
+		/** @var $emTask tx_em_Tasks_UpdateExtensionList */
+		$emTask = t3lib_div::makeInstance('tx_em_Tasks_UpdateExtensionList');
+		$emTask->execute();
+	}
 }
 
 ?>
