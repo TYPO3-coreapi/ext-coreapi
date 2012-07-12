@@ -55,6 +55,9 @@ class Tx_Coreapi_Service_SiteApiService {
 	 * @return void
 	 */
 	public function createSysNews($header, $text) {
+		if (strlen($header) === 0) {
+			throw new InvalidArgumentException('No header given');
+		}
 		$GLOBALS['TYPO3_DB']->exec_INSERTquery('sys_news', array(
 			'title' => $header,
 			'content' => $text,

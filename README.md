@@ -15,6 +15,10 @@ Checkout the project website at forge.typo3.org:
 	* clearConfigurationCache
 
 ### CLI call: ###
+If you are using TYPO3 4.7+, you can use the awesome CommandController of Extbase
+
 This will show you all available calls
 	./typo3/cli_dispatch.phpsh extbase help
 
+If you are using 4.5 or 4.6, you can still use the extension with a call like
+	./typo3/cli_dispatch.phpsh coreapi extensionapi info coreapi

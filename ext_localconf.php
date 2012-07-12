@@ -9,4 +9,10 @@ if (TYPO3_MODE === 'BE') {
 	$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['extbase']['commandControllers'][] = 'Tx_Coreapi_Command_ExtensionApiCommandController';
 }
 
+
+	// Register the CLI dispatcher
+$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['GLOBAL']['cliKeys'][$_EXTKEY] = array(
+	'EXT:' . $_EXTKEY . '/Classes/Cli/Dispatcher.php', '_CLI_lowlevel'
+);
+
 ?>

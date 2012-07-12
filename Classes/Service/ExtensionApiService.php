@@ -47,8 +47,11 @@ class Tx_Coreapi_Service_ExtensionApiService {
 	 * @return array
 	 */
 	public function getExtensionInformation($key) {
+		if (strlen($key) === 0) {
+			throw new InvalidArgumentException('No extension key given!');
+		}
 		if (!$GLOBALS['TYPO3_LOADED_EXT'][$key]) {
-			throw new Exception(sprintf('Extension "%s" not found.', $key));
+			throw new InvalidArgumentException(sprintf('Extension "%s" not found!', $key));
 		}
 
 		include_once(t3lib_extMgm::extPath($key) . 'ext_emconf.php');
@@ -61,6 +64,11 @@ class Tx_Coreapi_Service_ExtensionApiService {
 	}
 
 	public function getInstalledExtensions($type = '') {
+		$type = strtoupper($type);
+		if (!empty($type) && $type !== 'L' && $type !== 'G' && $type !== 'S') {
+			throw new InvalidArgumentException('Only "L", "S" and "G" are supported as type (or nothing)');
+		}
+
 		$extensions = $GLOBALS['TYPO3_LOADED_EXT'];
 
 		$list = array();
