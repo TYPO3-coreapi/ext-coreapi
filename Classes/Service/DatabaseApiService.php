@@ -1,5 +1,6 @@
 <?php
-/***************************************************************
+
+/* * *************************************************************
  *  Copyright notice
  *
  *  (c) 2012 Georg Ringer <georg.ringer@cyberhouse.at>
@@ -20,7 +21,7 @@
  *  GNU General Public License for more details.
  *
  *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * ************************************************************* */
 
 /**
  * DB API service
@@ -29,7 +30,6 @@
  * @subpackage tx_coreapi
  */
 class Tx_Coreapi_Service_DatabaseApiService {
-
 	const ACTION_UPDATE_CLEAR_TABLE = 1;
 	const ACTION_UPDATE_ADD = 2;
 	const ACTION_UPDATE_CHANGE = 3;
@@ -54,11 +54,32 @@ class Tx_Coreapi_Service_DatabaseApiService {
 	/**
 	 * Database compare
 	 *
-	 * @param array $allowedActions
+	 * @param string $actions comma seperated list of IDs
 	 * @return array
 	 */
-	public function databaseCompare(array $allowedActions) {
+	public function databaseCompare($actions) {
 		$errors = array();
+
+
+		/** @var $service Tx_Coreapi_Service_DatabaseApiService */
+		$service = t3lib_div::makeInstance('Tx_Coreapi_Service_DatabaseApiService');
+		$availableActions = array_flip(t3lib_div::makeInstance('Tx_Extbase_Reflection_ClassReflection', 'Tx_Coreapi_Service_DatabaseApiService')->getConstants());
+
+
+		if (empty($actions)) {
+			throw new InvalidArgumentException('No compare modes defined');
+		}
+
+		$allowedActions = array();
+		$actionSplit = t3lib_div::trimExplode(',', $actions);
+		foreach ($actionSplit as $split) {
+			if (!isset($availableActions[$split])) {
+				throw new InvalidArgumentException(sprintf('Action "%s" is not available!', $split));
+			}
+			$allowedActions[$split] = 1;
+		}
+
+
 		$tblFileContent = t3lib_div::getUrl(PATH_t3lib . 'stddb/tables.sql');
 
 		foreach ($GLOBALS['TYPO3_LOADED_EXT'] as $extKey => $loadedExtConf) {
@@ -83,35 +104,35 @@ class Tx_Coreapi_Service_DatabaseApiService {
 			$allowedRequestKeys = $this->getRequestKeys($update_statements, $remove_statements);
 			$results = array();
 
-			if ($allowedActions[self::ACTION_UPDATE_CLEAR_TABLE] == 1) {
+			if ($actions[self::ACTION_UPDATE_CLEAR_TABLE] == 1) {
 				$results[] = $this->sqlHandler->performUpdateQueries($update_statements['clear_table'], $allowedRequestKeys);
 			}
 
-			if ($allowedActions[self::ACTION_UPDATE_ADD] == 1) {
+			if ($actions[self::ACTION_UPDATE_ADD] == 1) {
 				$results[] = $this->sqlHandler->performUpdateQueries($update_statements['add'], $allowedRequestKeys);
 			}
 
-			if ($allowedActions[self::ACTION_UPDATE_CHANGE] == 1) {
+			if ($actions[self::ACTION_UPDATE_CHANGE] == 1) {
 				$results[] = $this->sqlHandler->performUpdateQueries($update_statements['change'], $allowedRequestKeys);
 			}
 
-			if ($allowedActions[self::ACTION_REMOVE_CHANGE] == 1) {
+			if ($actions[self::ACTION_REMOVE_CHANGE] == 1) {
 				$results[] = $this->sqlHandler->performUpdateQueries($remove_statements['change'], $allowedRequestKeys);
 			}
 
-			if ($allowedActions[self::ACTION_REMOVE_DROP] == 1) {
+			if ($actions[self::ACTION_REMOVE_DROP] == 1) {
 				$results[] = $this->sqlHandler->performUpdateQueries($remove_statements['drop'], $allowedRequestKeys);
 			}
 
-			if ($allowedActions[self::ACTION_UPDATE_CREATE_TABLE] == 1) {
+			if ($actions[self::ACTION_UPDATE_CREATE_TABLE] == 1) {
 				$results[] = $this->sqlHandler->performUpdateQueries($update_statements['create_table'], $allowedRequestKeys);
 			}
 
-			if ($allowedActions[self::ACTION_REMOVE_CHANGE_TABLE] == 1) {
+			if ($actions[self::ACTION_REMOVE_CHANGE_TABLE] == 1) {
 				$results[] = $this->sqlHandler->performUpdateQueries($remove_statements['change_table'], $allowedRequestKeys);
 			}
 
-			if ($allowedActions[self::ACTION_REMOVE_DROP_TABLE] == 1) {
+			if ($actions[self::ACTION_REMOVE_DROP_TABLE] == 1) {
 				$results[] = $this->sqlHandler->performUpdateQueries($remove_statements['drop_table'], $allowedRequestKeys);
 			}
 
@@ -127,6 +148,20 @@ class Tx_Coreapi_Service_DatabaseApiService {
 		return $errors;
 	}
 
+	/**
+	 * Get all available actions
+	 * @return array
+	 */
+	public function databaseCompareAvailableActions() {
+		$availableActions = array_flip(t3lib_div::makeInstance('Tx_Extbase_Reflection_ClassReflection', 'Tx_Coreapi_Service_DatabaseApiService')->getConstants());
+
+		foreach ($availableActions as $number => $action) {
+			if (!t3lib_div::isFirstPartOfStr($action, 'ACTION_')) {
+				unset($availableActions[$number]);
+			}
+		}
+		return $availableActions;
+	}
 
 	/**
 	 * Get all request keys, even for those requests which are not used

@@ -26,41 +26,57 @@
  * Starts all due tasks, used by the command line interface
  * This script must be included by the "CLI module dispatcher"
  *
- * @author		Georg Ringer <georg.ringer@cyberhouse.at>
- * @package		TYPO3
- * @subpackage	tx_coreapi
+ * @author Georg Ringer <georg.ringer@cyberhouse.at>
+ * @package	TYPO3
+ * @subpackage tx_coreapi
  */
 class Tx_Coreapi_Cli_Dispatcher {
 
 	const MAXIMUM_LINE_LENGTH = 79;
 
+	/**
+	 * @var string service
+	 */
 	protected $service = '';
+
+	/**
+	 * @var string command
+	 */
 	protected $command = '';
 
-
+	/**
+	 * Constructor with basic checks
+	 *
+	 * @return void
+	 */
 	public function __construct() {
 		if (!isset($_SERVER['argv'][1])) {
 			die('ERROR: No service defined');
 		}
-		$this->service = strtolower($_SERVER['argv'][1]);
 
-		if (!isset($_SERVER['argv'][2])) {
-			die('ERROR: No command defined');
+		$split = explode(':', $_SERVER['argv'][1]);
+		if (count($split) !== 2) {
+			die('ERROR: Only one : is allowed in first argument');
 		}
-		$this->command = strtolower($_SERVER['argv'][2]);
+
+		$this->service = strtolower($split[0]);
+		$this->command = strtolower($split[1]);
 	}
 
 
 	public function start() {
 		try {
 			switch ($this->service) {
-				case 'databaseapi':
+				case 'cache':
+					$this->cacheApi();
+					break;
+				case 'database':
 					$this->databaseApi();
 					break;
-				case 'extensionapi':
+				case 'extension':
 					$this->extensionApi();
 					break;
-				case 'siteapi':
+				case 'site':
 					$this->siteApi();
 					break;
 				default:
@@ -72,11 +88,39 @@ class Tx_Coreapi_Cli_Dispatcher {
 		}
 	}
 
+	protected function cacheApi() {
+		$cacheApiService = t3lib_div::makeInstance('Tx_Coreapi_Service_CacheApiService');
+		$cacheApiService->initializeObject();
+
+		switch ($this->command) {
+			case 'clearallcaches':
+				$cacheApiService->clearAllCaches();
+				$this->outputLine('All caches cleared');
+				break;
+			case 'clearconfigurationcache':
+				$cacheApiService->clearConfigurationCache();
+				$this->outputLine('Configuration cache cleared');
+				break;
+			case 'clearpagecache':
+				$cacheApiService->clearPageCache();
+				$this->outputLine('Page cache cleared');
+				break;
+			default:
+				die(sprintf('ERROR: Command "%s" not supported', $this->command));
+		}
+	}
+
 	protected function databaseApi() {
 		$databaseApiService = t3lib_div::makeInstance('Tx_Coreapi_Service_DatabaseApiService');
+
 		switch ($this->command) {
 			case 'databasecompare':
-				// todo
+				if ($_SERVER['argv'][2] === 'help') {
+					$actions = $databaseApiService->databaseCompareAvailableActions();
+					$this->outputTable($actions);
+				} else {
+					$databaseApiService->databaseCompare($_SERVER['argv'][2]);
+				}
 				break;
 			default:
 				die(sprintf('ERROR: Command "%s" not supported', $this->command));
@@ -94,9 +138,9 @@ class Tx_Coreapi_Cli_Dispatcher {
 		switch ($this->command) {
 			case 'info':
 					// @todo: remove duplicated code
-				$data = $extensionApiService->getExtensionInformation($_SERVER['argv'][3]);
+				$data = $extensionApiService->getExtensionInformation($_SERVER['argv'][2]);
 				$this->outputLine('');
-				$this->outputLine('EXTENSION "%s": %s %s', array(strtoupper($_SERVER['argv'][3]), $data['em_conf']['version'], $data['em_conf']['state']));
+				$this->outputLine('EXTENSION "%s": %s %s', array(strtoupper($_SERVER['argv'][2]), $data['em_conf']['version'], $data['em_conf']['state']));
 				$this->outputLine(str_repeat('-', self::MAXIMUM_LINE_LENGTH));
 
 				$outputInformation = array();
@@ -141,7 +185,7 @@ class Tx_Coreapi_Cli_Dispatcher {
 				$extensionApiService->updateMirrors();
 				break;
 			case 'listinstalled':
-				$extensions = $extensionApiService->getInstalledExtensions($_SERVER['argv'][3]);
+				$extensions = $extensionApiService->getInstalledExtensions($_SERVER['argv'][2]);
 				$out = array();
 
 				foreach($extensions as $key => $details) {
@@ -170,7 +214,7 @@ class Tx_Coreapi_Cli_Dispatcher {
 				$this->outputTable($infos);
 				break;
 			case 'createsysnews':
-				$siteApiService->createSysNews($_SERVER['argv'][3], $_SERVER['argv'][4]);
+				$siteApiService->createSysNews($_SERVER['argv'][2], $_SERVER['argv'][3]);
 				break;
 			default:
 				die(sprintf('ERROR: Command "%s" not supported', $this->command));
@@ -205,6 +249,7 @@ class Tx_Coreapi_Cli_Dispatcher {
 		}
 		$this->outputLine(str_repeat('-', self::MAXIMUM_LINE_LENGTH));
 	}
+
 }
 
 
