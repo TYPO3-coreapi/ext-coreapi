@@ -45,6 +45,7 @@ class Tx_Coreapi_Service_ExtensionApiService {
 	 *
 	 * @param string $key extension key
 	 * @return array
+	 * @throws InvalidArgumentException
 	 */
 	public function getExtensionInformation($key) {
 		if (strlen($key) === 0) {

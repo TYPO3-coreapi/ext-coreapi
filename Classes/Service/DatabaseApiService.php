@@ -54,17 +54,14 @@ class Tx_Coreapi_Service_DatabaseApiService {
 	/**
 	 * Database compare
 	 *
-	 * @param string $actions comma seperated list of IDs
+	 * @param string $actions comma separated list of IDs
 	 * @return array
+	 * @throws InvalidArgumentException
 	 */
 	public function databaseCompare($actions) {
 		$errors = array();
 
-
-		/** @var $service Tx_Coreapi_Service_DatabaseApiService */
-		$service = t3lib_div::makeInstance('Tx_Coreapi_Service_DatabaseApiService');
 		$availableActions = array_flip(t3lib_div::makeInstance('Tx_Extbase_Reflection_ClassReflection', 'Tx_Coreapi_Service_DatabaseApiService')->getConstants());
-
 
 		if (empty($actions)) {
 			throw new InvalidArgumentException('No compare modes defined');
@@ -82,7 +79,7 @@ class Tx_Coreapi_Service_DatabaseApiService {
 
 		$tblFileContent = t3lib_div::getUrl(PATH_t3lib . 'stddb/tables.sql');
 
-		foreach ($GLOBALS['TYPO3_LOADED_EXT'] as $extKey => $loadedExtConf) {
+		foreach ($GLOBALS['TYPO3_LOADED_EXT'] as $loadedExtConf) {
 			if (is_array($loadedExtConf) && $loadedExtConf['ext_tables.sql']) {
 				$extensionSqlContent = t3lib_div::getUrl($loadedExtConf['ext_tables.sql']);
 				$tblFileContent .= LF . LF . LF . LF . $extensionSqlContent;

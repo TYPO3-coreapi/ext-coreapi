@@ -27,7 +27,7 @@
  * This script must be included by the "CLI module dispatcher"
  *
  * @author Georg Ringer <georg.ringer@cyberhouse.at>
- * @package	TYPO3
+ * @package TYPO3
  * @subpackage tx_coreapi
  */
 class Tx_Coreapi_Cli_Dispatcher {
@@ -51,12 +51,14 @@ class Tx_Coreapi_Cli_Dispatcher {
 	 */
 	public function __construct() {
 		if (!isset($_SERVER['argv'][1])) {
-			die('ERROR: No service defined');
+			$this->error('No service defined');
 		}
 
 		$split = explode(':', $_SERVER['argv'][1]);
-		if (count($split) !== 2) {
-			die('ERROR: Only one : is allowed in first argument');
+		if (count($split) === 1) {
+			$this->error('CLI calls need to be like coreapi cache:clearallcaches');
+		} elseif (count($split) !== 2) {
+			$this->error('Only one : is allowed in first argument');
 		}
 
 		$this->service = strtolower($split[0]);
@@ -80,7 +82,7 @@ class Tx_Coreapi_Cli_Dispatcher {
 					$this->siteApi();
 					break;
 				default:
-					die(sprintf('ERROR: Service "%s" not supported', $this->service));
+					$this->error(sprintf('Service "%s" not supported', $this->service));
 			}
 		} catch (Exception $e) {
 			$errorMessage = sprintf('ERROR: Error in service "%s" and command "%s"": %s!', $this->service, $this->command, $e->getMessage());
@@ -106,7 +108,7 @@ class Tx_Coreapi_Cli_Dispatcher {
 				$this->outputLine('Page cache cleared');
 				break;
 			default:
-				die(sprintf('ERROR: Command "%s" not supported', $this->command));
+				$this->error(sprintf('Command "%s" not supported', $this->command));
 		}
 	}
 
@@ -123,7 +125,7 @@ class Tx_Coreapi_Cli_Dispatcher {
 				}
 				break;
 			default:
-				die(sprintf('ERROR: Command "%s" not supported', $this->command));
+				$this->error(sprintf('Command "%s" not supported', $this->command));
 		}
 	}
 
@@ -195,7 +197,7 @@ class Tx_Coreapi_Cli_Dispatcher {
 				$this->outputTable($out);
 				break;
 			default:
-				die(sprintf('ERROR: Command "%s" not supported', $this->command));
+				$this->error(sprintf('Command "%s" not supported', $this->command));
 		}
 
 	}
@@ -217,7 +219,7 @@ class Tx_Coreapi_Cli_Dispatcher {
 				$siteApiService->createSysNews($_SERVER['argv'][2], $_SERVER['argv'][3]);
 				break;
 			default:
-				die(sprintf('ERROR: Command "%s" not supported', $this->command));
+				$this->error(sprintf('Command "%s" not supported', $this->command));
 		}
 	}
 
@@ -250,8 +252,17 @@ class Tx_Coreapi_Cli_Dispatcher {
 		$this->outputLine(str_repeat('-', self::MAXIMUM_LINE_LENGTH));
 	}
 
-}
+	/**
+	 * End call
+	 *
+	 * @param string $message Error message
+	 * @return void
+	 */
+	protected function error($message) {
+		die('ERROR: ' . $message);
+	}
 
+}
 
 if ((TYPO3_REQUESTTYPE & TYPO3_REQUESTTYPE_CLI) && basename(PATH_thisScript) == 'cli_dispatch.phpsh') {
 	$dispatcher = t3lib_div::makeInstance('Tx_Coreapi_Cli_Dispatcher');

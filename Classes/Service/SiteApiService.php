@@ -53,6 +53,7 @@ class Tx_Coreapi_Service_SiteApiService {
 	 * @param string $header header
 	 * @param string $text text
 	 * @return void
+	 * @throws InvalidArgumentException
 	 */
 	public function createSysNews($header, $text) {
 		if (strlen($header) === 0) {
