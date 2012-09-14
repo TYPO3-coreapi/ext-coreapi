@@ -23,45 +23,44 @@
  ***************************************************************/
 
 /**
- * Cache API service
+ * Site API Command Controller
  *
  * @package TYPO3
  * @subpackage tx_coreapi
  */
-class Tx_Coreapi_Service_CacheApiService {
+class Tx_Coreapi_Command_SiteApiCommandController extends Tx_Extbase_MVC_Controller_CommandController {
 
 	/**
-	 * @var t3lib_TCEmain
-	 */
-	protected $tce;
-
-	/**
+	 * Site info
 	 *
+	 * Basic information about the system
+	 *
+	 * @return void
 	 */
-	public function initializeObject() {
-		$this->tce = t3lib_div::makeInstance('t3lib_TCEmain');
-		$this->tce->start(Array(), Array());
+	public function infoCommand() {
+		/** @var $service Tx_Coreapi_Service_SiteApiService */
+		$service = $this->objectManager->get('Tx_Coreapi_Service_SiteApiService');
+		$data = $service->getSiteInfo();
+
+		foreach($data as $key => $value) {
+			$line = wordwrap($value, self::MAXIMUM_LINE_LENGTH - 43, PHP_EOL . str_repeat(' ', 43), TRUE);
+			$this->outputLine('%-2s%-40s %s', array(' ', $key, $line));
+		}
 	}
 
 	/**
-	 * Clear all caches
-	 */
-	public function clearAllCaches() {
-		$this->tce->clear_cacheCmd('all');
-	}
-
-	/**
+	 * Create a sys news
 	 *
-	 */
-	public function clearPageCache() {
-		$this->tce->clear_cacheCmd('pages');
-	}
-
-	/**
+	 * Sys news record is displayed at the login page
 	 *
+	 * @param string $header Header text
+	 * @param string $text Basic text
+	 * @return void
 	 */
-	public function clearConfigurationCache() {
-		$this->tce->clear_cacheCmd('temp_cached');
+	public function createSysNewsCommand($header, $text = '') {
+		/** @var $service Tx_Coreapi_Service_SiteApiService */
+		$service = $this->objectManager->get('Tx_Coreapi_Service_SiteApiService');
+		$service->createSysNews($header, $text);
 	}
 
 }

@@ -23,45 +23,39 @@
  ***************************************************************/
 
 /**
- * Cache API service
+ * API Command Controller
  *
  * @package TYPO3
  * @subpackage tx_coreapi
  */
-class Tx_Coreapi_Service_CacheApiService {
+class Tx_Coreapi_Command_ApiCommandController extends Tx_Extbase_MVC_Controller_CommandController {
 
 	/**
-	 * @var t3lib_TCEmain
-	 */
-	protected $tce;
-
-	/**
+	 * Database compare
 	 *
-	 */
-	public function initializeObject() {
-		$this->tce = t3lib_div::makeInstance('t3lib_TCEmain');
-		$this->tce->start(Array(), Array());
-	}
-
-	/**
-	 * Clear all caches
-	 */
-	public function clearAllCaches() {
-		$this->tce->clear_cacheCmd('all');
-	}
-
-	/**
+	 * Leave the argument 'actions' empty or use "help" to see the available ones
 	 *
+	 * @param string $actions List of actions which will be executed
 	 */
-	public function clearPageCache() {
-		$this->tce->clear_cacheCmd('pages');
-	}
+	public function databaseCompareCommand($actions = '') {
+		/** @var $service Tx_Coreapi_Service_DatabaseApiService */
+		$service = $this->objectManager->get('Tx_Coreapi_Service_DatabaseApiService');
 
-	/**
-	 *
-	 */
-	public function clearConfigurationCache() {
-		$this->tce->clear_cacheCmd('temp_cached');
+		if ($actions === 'help' || strlen($actions) === 0) {
+			$actions = $service->databaseCompareAvailableActions();
+			foreach ($actions as $number => $action) {
+				$this->outputLine('  - ' . $action . ' => ' . $number);
+			}
+			$this->quit();
+		}
+
+		$result = $service->databaseCompare($actions);
+		if (empty($result)) {
+			$this->outputLine('DB has been compared');
+		} else {
+			$this->outputLine('DB could not be compared, Error(s): %s', array(LF . implode(LF, $result)));
+			$this->quit();
+		}
 	}
 
 }
