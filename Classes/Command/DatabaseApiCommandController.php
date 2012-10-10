@@ -28,7 +28,7 @@
  * @package TYPO3
  * @subpackage tx_coreapi
  */
-class Tx_Coreapi_Command_ApiCommandController extends Tx_Extbase_MVC_Controller_CommandController {
+class Tx_Coreapi_Command_DatabaseApiCommandController extends Tx_Extbase_MVC_Controller_CommandController {
 
 	/**
 	 * Database compare

@@ -5,7 +5,7 @@
 $extensionPath = t3lib_extMgm::extPath('coreapi');
 $extensionClassesPath = $extensionPath . 'Classes/';
 return array(
-	'tx_coreapi_command_apicommandcontroller' => $extensionClassesPath . 'Command/ApiCommandController.php',
+	'tx_coreapi_command_databaseapicommandcontroller' => $extensionClassesPath . 'Command/DatabaseApiCommandController.php',
 	'tx_coreapi_command_siteapicommandcontroller' => $extensionClassesPath . 'Command/SiteApiCommandController.php',
 	'tx_coreapi_command_cacheapicommandcontroller' => $extensionClassesPath . 'Command/CacheApiCommandController.php',
 	'tx_coreapi_service_cacheapiservice' => $extensionClassesPath . 'Service/CacheApiService.php',
