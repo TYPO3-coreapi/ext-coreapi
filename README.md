@@ -6,13 +6,22 @@ Checkout the project website at forge.typo3.org:
 	http://forge.typo3.org/projects/show/extension-coreapi
 
 ### Tasks ###
-* Update DB
+* DatabaseApi
+	* databaseCompare
 
-
-* Cache
+* CacheApi
 	* clearAllCaches
 	* clearPageCache
 	* clearConfigurationCache
+
+* ExtensionApi
+	* info
+	* listInstalled
+	* updateList
+
+* SiteApi
+	* info
+	* createSysNews
 
 ### CLI call: ###
 
