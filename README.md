@@ -25,6 +25,8 @@ Checkout the project website at forge.typo3.org:
 
 ### CLI call: ###
 
+Make sure you have a backend user called `_cli_lowlevel`
+
 #### TYPO3 4.7+ ####
 If you are using TYPO3 4.7+, you can use the awesome CommandController of Extbase
 
