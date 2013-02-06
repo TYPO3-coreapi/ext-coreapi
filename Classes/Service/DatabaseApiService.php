@@ -101,35 +101,35 @@ class Tx_Coreapi_Service_DatabaseApiService {
 			$allowedRequestKeys = $this->getRequestKeys($update_statements, $remove_statements);
 			$results = array();
 
-			if ($actions[self::ACTION_UPDATE_CLEAR_TABLE] == 1) {
+			if ($allowedActions[self::ACTION_UPDATE_CLEAR_TABLE] == 1) {
 				$results[] = $this->sqlHandler->performUpdateQueries($update_statements['clear_table'], $allowedRequestKeys);
 			}
 
-			if ($actions[self::ACTION_UPDATE_ADD] == 1) {
+			if ($allowedActions[self::ACTION_UPDATE_ADD] == 1) {
 				$results[] = $this->sqlHandler->performUpdateQueries($update_statements['add'], $allowedRequestKeys);
 			}
 
-			if ($actions[self::ACTION_UPDATE_CHANGE] == 1) {
+			if ($allowedActions[self::ACTION_UPDATE_CHANGE] == 1) {
 				$results[] = $this->sqlHandler->performUpdateQueries($update_statements['change'], $allowedRequestKeys);
 			}
 
-			if ($actions[self::ACTION_REMOVE_CHANGE] == 1) {
+			if ($allowedActions[self::ACTION_REMOVE_CHANGE] == 1) {
 				$results[] = $this->sqlHandler->performUpdateQueries($remove_statements['change'], $allowedRequestKeys);
 			}
 
-			if ($actions[self::ACTION_REMOVE_DROP] == 1) {
+			if ($allowedActions[self::ACTION_REMOVE_DROP] == 1) {
 				$results[] = $this->sqlHandler->performUpdateQueries($remove_statements['drop'], $allowedRequestKeys);
 			}
 
-			if ($actions[self::ACTION_UPDATE_CREATE_TABLE] == 1) {
+			if ($allowedActions[self::ACTION_UPDATE_CREATE_TABLE] == 1) {
 				$results[] = $this->sqlHandler->performUpdateQueries($update_statements['create_table'], $allowedRequestKeys);
 			}
 
-			if ($actions[self::ACTION_REMOVE_CHANGE_TABLE] == 1) {
+			if ($allowedActions[self::ACTION_REMOVE_CHANGE_TABLE] == 1) {
 				$results[] = $this->sqlHandler->performUpdateQueries($remove_statements['change_table'], $allowedRequestKeys);
 			}
 
-			if ($actions[self::ACTION_REMOVE_DROP_TABLE] == 1) {
+			if ($allowedActions[self::ACTION_REMOVE_DROP_TABLE] == 1) {
 				$results[] = $this->sqlHandler->performUpdateQueries($remove_statements['drop_table'], $allowedRequestKeys);
 			}
 
