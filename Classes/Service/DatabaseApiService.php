@@ -180,7 +180,7 @@ class Tx_Coreapi_Service_DatabaseApiService {
 		}
 
 		foreach ($removeActions as $removeAction) {
-			if (isset($remove[$removeAction]) && is_array($update[$removeAction])) {
+			if (isset($remove[$removeAction]) && is_array($remove[$removeAction])) {
 				$tmpKeys += array_keys($remove[$removeAction]);
 			}
 		}
