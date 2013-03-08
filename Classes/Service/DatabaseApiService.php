@@ -86,6 +86,14 @@ class Tx_Coreapi_Service_DatabaseApiService {
 			}
 		}
 
+		if (is_callable('t3lib_cache::getDatabaseTableDefinitions')) {
+			$tblFileContent .= t3lib_cache::getDatabaseTableDefinitions();
+		}
+
+		if (class_exists('TYPO3\\CMS\\Core\\Category\\CategoryRegistry')) {
+			$tblFileContent .= \TYPO3\CMS\Core\Category\CategoryRegistry::getInstance()->getDatabaseTableDefinitions();
+		}
+
 		if ($tblFileContent) {
 			$fileContent = implode(LF, $this->sqlHandler->getStatementArray($tblFileContent, 1, '^CREATE TABLE '));
 			$FDfile = $this->sqlHandler->getFieldDefinitions_fileContent($fileContent);
@@ -180,7 +188,7 @@ class Tx_Coreapi_Service_DatabaseApiService {
 		}
 
 		foreach ($removeActions as $removeAction) {
-			if (isset($remove[$removeAction]) && is_array($update[$removeAction])) {
+			if (isset($remove[$removeAction]) && is_array($remove[$removeAction])) {
 				$tmpKeys += array_keys($remove[$removeAction]);
 			}
 		}
