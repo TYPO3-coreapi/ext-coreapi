@@ -60,8 +60,13 @@ class Tx_Coreapi_Service_CacheApiService {
 	/**
 	 *
 	 */
-	public function clearConfigurationCache() {
-		$this->tce->clear_cacheCmd('temp_cached');
+	public function clearConfigurationCache() {        
+		if (verison_compare(TYPO3_version, '6.0.0', '>=')) {
+	   		\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::removeCacheFiles();
+		} else {
+			$this->tce->clear_cacheCmd('temp_cached');
+		}
+		
 	}
 
 }
