@@ -47,6 +47,9 @@ class Tx_Coreapi_Service_CacheApiService {
 	 * Clear all caches
 	 */
 	public function clearAllCaches() {
+		if (version_compare(TYPO3_version, '6.0.0', '<')) {
+			t3lib_extMgm::removeCacheFiles();
+		}
 		$this->tce->clear_cacheCmd('all');
 	}
 
@@ -61,6 +64,9 @@ class Tx_Coreapi_Service_CacheApiService {
 	 *
 	 */
 	public function clearConfigurationCache() {
+		if (version_compare(TYPO3_version, '6.0.0', '<')) {
+			t3lib_extMgm::removeCacheFiles();
+		}
 		$this->tce->clear_cacheCmd('temp_cached');
 	}
 
