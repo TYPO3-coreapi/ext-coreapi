@@ -44,6 +44,11 @@ Checkout the project website at forge.typo3.org:
 
 Make sure you have a backend user called `_cli_lowlevel`
 
+If you want to use the cache clearing commands, you need to add the following snippet to the TSconfig field of this backend user:
+
+	options.clearCache.all=1
+	options.clearCache.pages=1
+
 #### TYPO3 4.7+ ####
 If you are using TYPO3 4.7+, you can use the awesome CommandController of Extbase.
 
