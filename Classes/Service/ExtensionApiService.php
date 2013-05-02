@@ -40,6 +40,17 @@ class Tx_Coreapi_Service_ExtensionApiService {
 	extension:refresh           Refreshes the local cache of all extensions available in TER
 */
 
+	public function __construct(){
+
+		if (version_compare(TYPO3_version, '6.0.0', '<')) {
+
+			$this->extensionList = t3lib_div::makeInstance('tx_em_Extensions_List', $this);
+		
+		}
+	}
+
+
+
 	/**
 	 * Get information about an extension
 	 *
@@ -98,6 +109,160 @@ class Tx_Coreapi_Service_ExtensionApiService {
 		$emTask = t3lib_div::makeInstance('tx_em_Tasks_UpdateExtensionList');
 		$emTask->execute();
 	}
+	
+	
+
+	/**
+	 * Install (load) an extension
+	 * 
+	 * @param string $key extension key
+	 * @return void
+	 */
+	public function installExtension($key){
+		
+
+		if(t3lib_div::compat_version('6.0.0')){
+			throw new RuntimeException('This feature is not available in TYPO3 versions > 4.7 (yet)!');
+		}
+		
+		
+		$install = t3lib_div::makeInstance('tx_em_Install', $this);
+		$install->setSilentMode(TRUE);
+		
+
+		// checks if extension exists		
+		list($list,) = $this->extensionList->getInstalledExtensions();;
+				
+		$exist = FALSE;
+		foreach ($list as $k => $v) {
+			if ($v['extkey'] === $key) {
+				$exist = TRUE;
+				break;
+			}
+		}
+		if ($exist === FALSE) {
+			
+			throw new InvalidArgumentException(sprintf('Extension "%s" does not exist!', $key));
+			
+		}
+		
+		
+
+		//check if extension is already loaded
+		if (t3lib_extMgm::isLoaded($key)) {
+			
+			throw new InvalidArgumentException(sprintf('Extension "%s" already installed!', $key));
+			
+		}
+
+		
+		//check if localconf.php is writable
+		if (!t3lib_extMgm::isLocalconfWritable()) {
+
+			throw new RuntimeException('Localconf.php is not writeable!');
+			
+		}
+		
+		
+		//add extension to list of loaded extensions
+		$newlist = $this->extensionList->addExtToList($key, $list);	
+		if ($newlist === -1) {
+
+			throw new RuntimeException(sprintf('Extension "%s" could not be installed!', $key));
+
+		}
+		
+		//update typo3conf/localconf.php
+		$install->writeNewExtensionList($newlist);
+
+		tx_em_Tools::refreshGlobalExtList();		
+		
+		//make database changes
+		$install->forceDBupdates($key, $list[$key]);		
+
+
+		/** @var $service Tx_Coreapi_Service_CacheApiService */
+		//$service = $this->objectManager->get('Tx_Coreapi_Service_CacheApiService');
+		//$service->clearAllCaches();
+		
+	}
+
+
+	/**
+	 * Uninstall (unload) an extension
+	 * 
+	 * @param string $key extension key
+	 * @return void
+	 */
+	public function unInstallExtension($key){
+		
+		if(t3lib_div::compat_version('6.0.0')){
+			throw new RuntimeException('This feature is not available in TYPO3 versions > 4.7 (yet)!');
+		}
+		
+		
+		//check if extension is this extension (coreapi)
+		if ($ext == 'coreapi') {
+			
+			throw new InvalidArgumentException(sprintf('Extension "%s" cannot be uninstalled!', $key));
+		
+		}
+		
+		
+		$install = t3lib_div::makeInstance('tx_em_Install', $this);
+		$install->setSilentMode(TRUE);
+		
+		
+		// checks if extension exists		
+		list($list,) = $this->extensionList->getInstalledExtensions();;
+				
+		$exist = FALSE;
+		foreach ($list as $k => $v) {
+			if ($v['extkey'] === $key) {
+				$exist = TRUE;
+				break;
+			}
+		}
+		if ($exist === FALSE) {
+			
+			throw new InvalidArgumentException(sprintf('Extension "%s" does not exist!', $key));
+			
+		}
+
+		
+		//check if extension is loaded
+		if (!t3lib_extMgm::isLoaded($key)) {
+
+			throw new InvalidArgumentException(sprintf('Extension "%s" is not installed!', $key));
+
+		}
+
+
+		//check if localconf.php is writable
+		if (!t3lib_extMgm::isLocalconfWritable()) {
+
+			throw new RuntimeException('Localconf.php is not writeable!');
+			
+		}
+
+		
+		$newlist = $this->extensionList->removeExtFromList($key, $list);	
+
+		if ($newlist === -1) {
+
+			throw new RuntimeException(sprintf('Extension "%s" could not be installed!', $key));
+
+		}
+		
+		$install->writeNewExtensionList($newlist);
+		
+		tx_em_Tools::refreshGlobalExtList();		
+		
+	}
+
+
+	
+	
 }
 
 ?>

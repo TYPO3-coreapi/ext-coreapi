@@ -127,6 +127,60 @@ class Tx_Coreapi_Command_ExtensionApiCommandController extends Tx_Extbase_MVC_Co
 
 		$this->outputLine('Extension list has been updated.');
 	}
+	
+	
+	/**
+	 * Install(load) an extension
+	 *
+	 * @param string $key extension key
+	 * @return void
+	 */
+	public function installCommand($key) {
+		
+		try {
+			
+			/** @var $service Tx_Coreapi_Service_ExtensionApiService */
+			$service = $this->objectManager->get('Tx_Coreapi_Service_ExtensionApiService');
+			$data = $service->installExtension($key);
+			
+		} catch (Exception $e) {
+			
+			$this->outputLine($e->getMessage());
+			$this->quit();
+			
+		}
+		
+		$this->outputLine(sprintf('Extension "%s" is now installed!', $key));
+		
+	}
+	
+
+
+	/**
+	 * Install(unload) an extension
+	 *
+	 * @param string $key extension key
+	 * @return void
+	 */
+	public function unInstallCommand($key) {
+		
+		try {
+			
+			/** @var $service Tx_Coreapi_Service_ExtensionApiService */
+			$service = $this->objectManager->get('Tx_Coreapi_Service_ExtensionApiService');
+			$data = $service->unInstallExtension($key);
+			
+		} catch (Exception $e) {
+			
+			$this->outputLine($e->getMessage());
+			$this->quit();
+			
+		}
+		
+		$this->outputLine(sprintf('Extension "%s" is now uninstalled!', $key));
+		
+	}
+
 
 }
 
