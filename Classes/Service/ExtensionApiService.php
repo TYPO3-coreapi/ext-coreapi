@@ -121,25 +121,14 @@ class Tx_Coreapi_Service_ExtensionApiService {
 	public function installExtension($key){
 
 		if(t3lib_div::compat_version('6.0.0')){
+			
 			throw new RuntimeException('This feature is not available in TYPO3 versions > 4.7 (yet)!');
+			
 		}
 		
 		
-		$install = t3lib_div::makeInstance('tx_em_Install', $this);
-		$install->setSilentMode(TRUE);
-		
-
 		// checks if extension exists		
-		list($list,) = $this->extensionList->getInstalledExtensions();;
-				
-		$exist = FALSE;
-		foreach ($list as $k => $v) {
-			if ($v['extkey'] === $key) {
-				$exist = TRUE;
-				break;
-			}
-		}
-		if ($exist === FALSE) {
+		if (!$this->exist($key)) {
 			
 			throw new InvalidArgumentException(sprintf('Extension "%s" does not exist!', $key));
 			
@@ -171,6 +160,8 @@ class Tx_Coreapi_Service_ExtensionApiService {
 		}
 		
 		//update typo3conf/localconf.php
+		$install = t3lib_div::makeInstance('tx_em_Install', $this);
+		$install->setSilentMode(TRUE);
 		$install->writeNewExtensionList($newlist);
 
 		tx_em_Tools::refreshGlobalExtList();		
@@ -195,7 +186,9 @@ class Tx_Coreapi_Service_ExtensionApiService {
 	public function unInstallExtension($key){
 		
 		if(t3lib_div::compat_version('6.0.0')){
+			
 			throw new RuntimeException('This feature is not available in TYPO3 versions > 4.7 (yet)!');
+			
 		}
 		
 		
@@ -207,21 +200,8 @@ class Tx_Coreapi_Service_ExtensionApiService {
 		}
 		
 		
-		$install = t3lib_div::makeInstance('tx_em_Install', $this);
-		$install->setSilentMode(TRUE);
-		
-		
 		// checks if extension exists		
-		list($list,) = $this->extensionList->getInstalledExtensions();;
-				
-		$exist = FALSE;
-		foreach ($list as $k => $v) {
-			if ($v['extkey'] === $key) {
-				$exist = TRUE;
-				break;
-			}
-		}
-		if ($exist === FALSE) {
+		if (!$this->exist($key)) {
 			
 			throw new InvalidArgumentException(sprintf('Extension "%s" does not exist!', $key));
 			
@@ -235,29 +215,27 @@ class Tx_Coreapi_Service_ExtensionApiService {
 
 		}
 
-
 		//check if localconf.php is writable
 		if (!t3lib_extMgm::isLocalconfWritable()) {
 
 			throw new RuntimeException('Localconf.php is not writeable!');
 			
 		}
-
 		
 		$newlist = $this->extensionList->removeExtFromList($key, $list);	
-
 		if ($newlist === -1) {
 
 			throw new RuntimeException(sprintf('Extension "%s" could not be installed!', $key));
 
 		}
-		
+
+		$install = t3lib_div::makeInstance('tx_em_Install', $this);
+		$install->setSilentMode(TRUE);
 		$install->writeNewExtensionList($newlist);
 		
 		tx_em_Tools::refreshGlobalExtList();		
 		
 	}
-
 
 
 	public function configureExtension($key,$conf = array()){
@@ -267,16 +245,7 @@ class Tx_Coreapi_Service_ExtensionApiService {
 		}
 		
 		
-		// checks if extension exists		
-		list($list,) = $this->extensionList->getInstalledExtensions();
-				
-		$exist = FALSE;
-		foreach ($list as $k => $v) {
-			if ($v['extkey'] === $key) {
-				$exist = TRUE;
-				break;
-			}
-		}
+	
 		if ($exist === FALSE) {
 			
 			throw new InvalidArgumentException(sprintf('Extension "%s" does not exist!', $key));
@@ -349,6 +318,28 @@ class Tx_Coreapi_Service_ExtensionApiService {
 		
 		//$this->clearCache();
 		
+	}
+
+
+	/**
+	 * Check if an extension exists
+	 * 
+	 * @param string $key extension key
+	 * @return void
+	 */
+	public function exist($key){
+
+		list($list,) = $this->extensionList->getInstalledExtensions();
+				
+		$exist = FALSE;
+		foreach ($list as $k => $v) {
+			if ($v['extkey'] === $key) {
+				$exist = TRUE;
+				break;
+			}
+		}
+
+		return $exist;
 	}
 	
 }
