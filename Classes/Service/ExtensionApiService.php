@@ -126,14 +126,12 @@ class Tx_Coreapi_Service_ExtensionApiService {
 			
 		}
 		
-		
 		// checks if extension exists		
 		if (!$this->exist($key)) {
 			
 			throw new InvalidArgumentException(sprintf('Extension "%s" does not exist!', $key));
 			
 		}
-		
 
 		//check if extension is already loaded
 		if (t3lib_extMgm::isLoaded($key)) {
@@ -141,7 +139,6 @@ class Tx_Coreapi_Service_ExtensionApiService {
 			throw new InvalidArgumentException(sprintf('Extension "%s" already installed!', $key));
 			
 		}
-
 		
 		//check if localconf.php is writable
 		if (!t3lib_extMgm::isLocalconfWritable()) {
@@ -149,7 +146,6 @@ class Tx_Coreapi_Service_ExtensionApiService {
 			throw new RuntimeException('Localconf.php is not writeable!');
 			
 		}
-		
 		
 		//add extension to list of loaded extensions
 		$newlist = $this->extensionList->addExtToList($key, $list);	
@@ -191,7 +187,6 @@ class Tx_Coreapi_Service_ExtensionApiService {
 			
 		}
 		
-		
 		//check if extension is this extension (coreapi)
 		if ($ext == 'coreapi') {
 			
@@ -199,14 +194,12 @@ class Tx_Coreapi_Service_ExtensionApiService {
 		
 		}
 		
-		
 		// checks if extension exists		
 		if (!$this->exist($key)) {
 			
 			throw new InvalidArgumentException(sprintf('Extension "%s" does not exist!', $key));
 			
 		}
-
 		
 		//check if extension is loaded
 		if (!t3lib_extMgm::isLoaded($key)) {
@@ -237,7 +230,12 @@ class Tx_Coreapi_Service_ExtensionApiService {
 		
 	}
 
-
+	/**
+	 * Configure an extension
+	 * 
+	 * @param string $key extension key
+	 * @return void
+	 */
 	public function configureExtension($key,$conf = array()){
 		
 		if(t3lib_div::compat_version('6.0.0')){
@@ -245,13 +243,12 @@ class Tx_Coreapi_Service_ExtensionApiService {
 		}
 		
 		
-	
-		if ($exist === FALSE) {
+		//check if extension exists
+		if (!$this->exist($key)) {
 			
 			throw new InvalidArgumentException(sprintf('Extension "%s" does not exist!', $key));
 			
 		}
-		
 		
 		//check if extension is loaded
 		if (!t3lib_extMgm::isLoaded($key)) {
@@ -259,7 +256,6 @@ class Tx_Coreapi_Service_ExtensionApiService {
 			throw new InvalidArgumentException(sprintf('Extension "%s" is not installed!', $key));
 
 		}
-		
 
 		// check if extension can be configured
 		$extAbsPath = t3lib_extMgm::extPath($key);
@@ -270,7 +266,6 @@ class Tx_Coreapi_Service_ExtensionApiService {
 			throw new InvalidArgumentException(sprintf('Extension "%s" has no configuration options!', $key));
 			
 		}
-		
 		
 		//checks if conf array is empty
 		if(empty($conf)){
@@ -306,7 +301,7 @@ class Tx_Coreapi_Service_ExtensionApiService {
 		$arr = is_array($arr) ? $arr : array();
 			
 		// process incoming configuration
-		// values are checked against types in $theConstants
+		// values are checked against types in $constants
 		$tsStyleConfig->ext_procesInput(array('data'=>$conf), array(), $constants, array());
 			
 		// current configuration is merged with incoming configuration
@@ -314,9 +309,10 @@ class Tx_Coreapi_Service_ExtensionApiService {
 		$arr = $tsStyleConfig->ext_mergeIncomingWithExisting($arr);
 			
 		// write configuration to typo3conf/localconf.php
+		$install = t3lib_div::makeInstance('tx_em_Install', $this);
+		$install->setSilentMode(TRUE);
 		$install->writeTsStyleConfig($key,$arr);
 		
-		//$this->clearCache();
 		
 	}
 
