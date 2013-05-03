@@ -129,7 +129,7 @@ class Tx_Coreapi_Service_ExtensionApiService {
 		
 		
 		// checks if extension exists		
-		if ($this->exist($key)) {
+		if (!$this->exist($key)) {
 			
 			throw new InvalidArgumentException(sprintf('Extension "%s" does not exist!', $key));
 			
@@ -203,7 +203,7 @@ class Tx_Coreapi_Service_ExtensionApiService {
 		
 		
 		// checks if extension exists		
-		if ($this->exist($key)) {
+		if (!$this->exist($key)) {
 			
 			throw new InvalidArgumentException(sprintf('Extension "%s" does not exist!', $key));
 			
