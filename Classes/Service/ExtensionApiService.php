@@ -119,7 +119,6 @@ class Tx_Coreapi_Service_ExtensionApiService {
 	 * @return void
 	 */
 	public function installExtension($key){
-		
 
 		if(t3lib_div::compat_version('6.0.0')){
 			throw new RuntimeException('This feature is not available in TYPO3 versions > 4.7 (yet)!');
@@ -145,7 +144,6 @@ class Tx_Coreapi_Service_ExtensionApiService {
 			throw new InvalidArgumentException(sprintf('Extension "%s" does not exist!', $key));
 			
 		}
-		
 		
 
 		//check if extension is already loaded
@@ -261,7 +259,97 @@ class Tx_Coreapi_Service_ExtensionApiService {
 	}
 
 
-	
+
+	public function configureExtension($key,$conf = array()){
+		
+		if(t3lib_div::compat_version('6.0.0')){
+			throw new RuntimeException('This feature is not available in TYPO3 versions > 4.7 (yet)!');
+		}
+		
+		
+		// checks if extension exists		
+		list($list,) = $this->extensionList->getInstalledExtensions();
+				
+		$exist = FALSE;
+		foreach ($list as $k => $v) {
+			if ($v['extkey'] === $key) {
+				$exist = TRUE;
+				break;
+			}
+		}
+		if ($exist === FALSE) {
+			
+			throw new InvalidArgumentException(sprintf('Extension "%s" does not exist!', $key));
+			
+		}
+		
+		
+		//check if extension is loaded
+		if (!t3lib_extMgm::isLoaded($key)) {
+
+			throw new InvalidArgumentException(sprintf('Extension "%s" is not installed!', $key));
+
+		}
+		
+
+		// check if extension can be configured
+		$extAbsPath = t3lib_extMgm::extPath($key);
+				
+		$extconftemplatefile = $extAbsPath.'ext_conf_template.txt';
+		if(!file_exist($extconftemplatefile)){
+
+			throw new InvalidArgumentException(sprintf('Extension "%s" has no configuration options!', $key));
+			
+		}
+		
+		
+		//checks if conf array is empty
+		if(empty($conf)){
+			
+			throw new InvalidArgumentException(sprintf('No configuration for extension "%s"!', $key));
+			
+		}
+		
+		// Load tsStyleConfig class and parse configuration template:
+		$extRelPath = t3lib_extmgm::extRelPath($key);
+		
+		$tsStyleConfig = t3lib_div::makeInstance('t3lib_tsStyleConfig');
+		$tsStyleConfig->doNotSortCategoriesBeforeMakingForm = TRUE;
+		$constants = $tsStyleConfig->ext_initTSstyleConfig(
+			t3lib_div::getUrl($extconftemplatefile),
+			$extRelPath,
+			$extAbsPath,
+			$GLOBALS['BACK_PATH']
+		);
+			
+		foreach(array_keys($constants) as $k){
+			if(!isset($conf[$k])){
+				if(!empty($constants[$k]['value'])){
+					$conf[$k] = $constants[$k]['value'];
+				} else {
+					$conf[$k] = $constants[$k]['default_value'];
+				}
+			}
+		}
+
+		// get existing configuration
+		$arr = unserialize($TYPO3_CONF_VARS['EXT']['extConf'][$key]);
+		$arr = is_array($arr) ? $arr : array();
+			
+		// process incoming configuration
+		// values are checked against types in $theConstants
+		$tsStyleConfig->ext_procesInput(array('data'=>$conf), array(), $constants, array());
+			
+		// current configuration is merged with incoming configuration
+		// NOTE: incoming configuration must contain ALL settings for the extension
+		$arr = $tsStyleConfig->ext_mergeIncomingWithExisting($arr);
+			
+		// write configuration to typo3conf/localconf.php
+		$install->writeTsStyleConfig($key,$arr);
+		
+		//$this->clearCache();
+		
+	}
 	
 }
 
