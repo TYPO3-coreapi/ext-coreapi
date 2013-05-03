@@ -163,12 +163,11 @@ class Tx_Coreapi_Service_ExtensionApiService {
 		tx_em_Tools::refreshGlobalExtList();		
 		
 		//make database changes
-		$install->forceDBupdates($key, $list[$key]);		
+		$install->forceDBupdates($key, $list[$key]);
 
-
-		/** @var $service Tx_Coreapi_Service_CacheApiService */
-		//$service = $this->objectManager->get('Tx_Coreapi_Service_CacheApiService');
-		//$service->clearAllCaches();
+		$cacheApiService = t3lib_div::makeInstance('Tx_Coreapi_Service_CacheApiService');
+		$cacheApiService->initializeObject();
+		$cacheApiService->clearAllCaches();		
 		
 	}
 
@@ -228,6 +227,9 @@ class Tx_Coreapi_Service_ExtensionApiService {
 		
 		tx_em_Tools::refreshGlobalExtList();		
 		
+		$cacheApiService = t3lib_div::makeInstance('Tx_Coreapi_Service_CacheApiService');
+		$cacheApiService->initializeObject();
+		$cacheApiService->clearAllCaches();		
 	}
 
 	/**
@@ -313,6 +315,9 @@ class Tx_Coreapi_Service_ExtensionApiService {
 		$install->setSilentMode(TRUE);
 		$install->writeTsStyleConfig($key,$arr);
 		
+		$cacheApiService = t3lib_div::makeInstance('Tx_Coreapi_Service_CacheApiService');
+		$cacheApiService->initializeObject();
+		$cacheApiService->clearAllCaches();		
 		
 	}
 
