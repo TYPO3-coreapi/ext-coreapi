@@ -185,20 +185,28 @@ class Tx_Coreapi_Command_ExtensionApiCommandController extends Tx_Extbase_MVC_Co
 
 	/**
 	 * Configure an extension
+	 * 
+	 * This command enables you to configure an extension.
+	 * In order to use this command the extension has to be 
 	 *
 	 * @param string $key extension key
-	 * @param string $file config file
 	 * @return void
 	 */
-	public function configureCommand($key,$configfile) {
+	public function configureCommand($key) {
 		
 		try {
 			
 			/** @var $service Tx_Coreapi_Service_ExtensionApiService */
 			$service = $this->objectManager->get('Tx_Coreapi_Service_ExtensionApiService');
+				
+			$args = $this->request->getExceedingArguments();
 			
-			
-			$conf = array();
+			foreach($args as $arg){
+				if(strstr($arg,'=')){
+					$parts = explode('=',$arg,2);
+					$conf[$parts[0]] = $parts[1];
+				}			
+			}
 			
 			$data = $service->configureExtension($key,$conf);
 			

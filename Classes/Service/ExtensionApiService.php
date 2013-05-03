@@ -244,7 +244,6 @@ class Tx_Coreapi_Service_ExtensionApiService {
 			throw new RuntimeException('This feature is not available in TYPO3 versions > 4.7 (yet)!');
 		}
 		
-		
 		//check if extension exists
 		if (!$this->exist($key)) {
 			
@@ -263,7 +262,7 @@ class Tx_Coreapi_Service_ExtensionApiService {
 		$extAbsPath = t3lib_extMgm::extPath($key);
 				
 		$extconftemplatefile = $extAbsPath.'ext_conf_template.txt';
-		if(!file_exist($extconftemplatefile)){
+		if(!file_exists($extconftemplatefile)){
 
 			throw new InvalidArgumentException(sprintf('Extension "%s" has no configuration options!', $key));
 			
