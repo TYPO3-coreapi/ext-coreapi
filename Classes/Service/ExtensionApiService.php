@@ -337,6 +337,34 @@ class Tx_Coreapi_Service_ExtensionApiService {
 	}
 
 
+
+	/**
+	 * Fetch an extension from repos
+	 * 
+	 * @param string $key extension key
+	 * @return void
+	 */
+	public function fetchExtension($key){
+
+		throw new RuntimeException('fetchExtension not implemented yet');
+
+	}
+
+
+
+	/**
+	 * Imports extension from file
+	 * 
+	 * @param string $file file
+	 * @return void
+	 */
+	public function importExtension($file){
+
+		throw new RuntimeException('importExtension not implemented yet');
+
+	}
+
+
 	/**
 	 * Check if an extension exists
 	 * 

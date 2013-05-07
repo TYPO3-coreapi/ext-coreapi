@@ -305,7 +305,7 @@ class Tx_Coreapi_Command_ExtensionApiCommandController extends Tx_Extbase_MVC_Co
 			
 		}
 		
-		$this->outputLine(sprintf('Extension "%s" has been fetched from repository!', $key));
+		$this->outputLine(sprintf('Extension "%s" has been imported from repository!', $key));
 
 	}
 
