@@ -187,7 +187,9 @@ class Tx_Coreapi_Command_ExtensionApiCommandController extends Tx_Extbase_MVC_Co
 	 * Configure an extension
 	 * 
 	 * This command enables you to configure an extension.
-	 * In order to use this command the extension has to be 
+	 * You can use this
+	 * 1) extension key + path to file containing a configuration for the extension
+	 * 2)
 	 *
 	 * @param string $key extension key
 	 * @return void
@@ -201,12 +203,37 @@ class Tx_Coreapi_Command_ExtensionApiCommandController extends Tx_Extbase_MVC_Co
 				
 			$args = $this->request->getExceedingArguments();
 			
-			foreach($args as $arg){
-				if(strstr($arg,'=')){
-					$parts = explode('=',$arg,2);
-					$conf[$parts[0]] = $parts[1];
-				}			
+			$conf = array();
+			
+			if(count($args) == 1 && isset($args[0]) && is_file($args[0])){
+			
+				$conf =  parse_ini_file($args[0]);
+				
+				if(empty($conf)){
+
+					throw new InvalidArgumentException(sprintf('File did not contain any configuration settings!', $key));
+					
+				}
+			
+			} else {
+				
+				foreach($args as $arg){
+					
+					if(strstr($arg,'=')){
+						$parts = explode('=',$arg,2);
+						$conf[$parts[0]] = $parts[1];
+					}
+							
+				}
+				
+				if(empty($conf)){
+
+					throw new InvalidArgumentException(sprintf('No configuration settings!', $key));
+					
+				}
+				
 			}
+			
 			
 			$data = $service->configureExtension($key,$conf);
 			

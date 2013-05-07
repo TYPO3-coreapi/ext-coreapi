@@ -240,8 +240,12 @@ class Tx_Coreapi_Service_ExtensionApiService {
 	 */
 	public function configureExtension($key,$conf = array()){
 		
+		global $TYPO3_CONF_VARS;
+		
 		if(t3lib_div::compat_version('6.0.0')){
+			
 			throw new RuntimeException('This feature is not available in TYPO3 versions > 4.7 (yet)!');
+			
 		}
 		
 		//check if extension exists
@@ -286,25 +290,37 @@ class Tx_Coreapi_Service_ExtensionApiService {
 			$extAbsPath,
 			$GLOBALS['BACK_PATH']
 		);
-			
-		foreach(array_keys($constants) as $k){
-			if(!isset($conf[$k])){
-				if(!empty($constants[$k]['value'])){
-					$conf[$k] = $constants[$k]['value'];
-				} else {
-					$conf[$k] = $constants[$k]['default_value'];
-				}
-			}
-		}
+		
 
 		// get existing configuration
 		$arr = unserialize($TYPO3_CONF_VARS['EXT']['extConf'][$key]);
 		$arr = is_array($arr) ? $arr : array();
+		
+		
+		//fill with missing values
+		foreach(array_keys($constants) as $k){
+			if(!isset($conf[$k])){
+				
+				if(isset($arr[$k])){
+			
+					$conf[$k] = $arr[$k]; 
+			
+				} else {
+				
+					if(!empty($constants[$k]['value'])){
+						$conf[$k] = $constants[$k]['value'];
+					} else {
+						$conf[$k] = $constants[$k]['default_value'];
+					}
+					
+				}
+			}
+		}
 			
 		// process incoming configuration
 		// values are checked against types in $constants
 		$tsStyleConfig->ext_procesInput(array('data'=>$conf), array(), $constants, array());
-			
+		
 		// current configuration is merged with incoming configuration
 		// NOTE: incoming configuration must contain ALL settings for the extension
 		$arr = $tsStyleConfig->ext_mergeIncomingWithExisting($arr);
