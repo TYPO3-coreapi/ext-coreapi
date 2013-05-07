@@ -187,14 +187,21 @@ class Tx_Coreapi_Command_ExtensionApiCommandController extends Tx_Extbase_MVC_Co
 	 * Configure an extension
 	 * 
 	 * This command enables you to configure an extension.
-	 * You can use this
-	 * 1) extension key + path to file containing a configuration for the extension
-	 * 2)
+	 * 
+	 * You can use this in two ways
+	 * 
+	 * 1) extensionkey + path to file containing a configuration for the extension
+	 * example: ./cli_dispatch.phpsh extbase extensionapi:configure rtehtmlarea C:\rteconf.txt
+	 * 
+	 * 2) extensionkey + key=value pair for each setting you want to change
+	 * example: ./cli_dispatch.phpsh extbase extensionapi:configure rtehtmlarea enableImages=1 allowStyleAttribute=0
 	 *
 	 * @param string $key extension key
 	 * @return void
 	 */
 	public function configureCommand($key) {
+		
+		global $TYPO3_CONF_VARS;
 		
 		try {
 			
@@ -246,6 +253,60 @@ class Tx_Coreapi_Command_ExtensionApiCommandController extends Tx_Extbase_MVC_Co
 		
 		$this->outputLine(sprintf('Extension "%s" has been configured!', $key));
 		
+	}
+
+	/**
+	 * Fetch an extension from TER
+	 * 
+	 * @param string $key extension key
+	 * @param string $version
+	 * @return void
+	 */
+
+	public function fetchCommand($key){
+
+		try {
+			
+			/** @var $service Tx_Coreapi_Service_ExtensionApiService */
+			$service = $this->objectManager->get('Tx_Coreapi_Service_ExtensionApiService');
+			$data = $service->fetchExtension($key,$version);
+			
+		} catch (Exception $e) {
+			
+			$this->outputLine($e->getMessage());
+			$this->quit();
+			
+		}
+		
+		$this->outputLine(sprintf('Extension "%s" has been fetched from repository!', $key));
+
+	}
+
+
+	/**
+	 * Import extension from file
+	 * 
+	 * @param string $file import extension
+	 * @return void
+	 */
+
+	public function importCommand($file){
+
+		try {
+			
+			/** @var $service Tx_Coreapi_Service_ExtensionApiService */
+			$service = $this->objectManager->get('Tx_Coreapi_Service_ExtensionApiService');
+			$data = $service->importExtension($file);
+			
+		} catch (Exception $e) {
+			
+			$this->outputLine($e->getMessage());
+			$this->quit();
+			
+		}
+		
+		$this->outputLine(sprintf('Extension "%s" has been fetched from repository!', $key));
+
 	}
 
 
