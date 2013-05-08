@@ -290,17 +290,21 @@ class Tx_Coreapi_Command_ExtensionApiCommandController extends Tx_Extbase_MVC_Co
 	/**
 	 * Import extension from file
 	 * 
-	 * @param string $file import extension
+	 * @param string $file path to t3x file
+	 * @param string $location where to import the extension. S = typo3/sysext, G = typo3/ext, L = typo3conf/ext
+	 * @param boolean $overwrite overwrite the extension if it already exists
 	 * @return void
 	 */
 
-	public function importCommand($file){
+	public function importCommand($file,$location='L',$overwrite=FALSE){
+
+		$data = array();
 
 		try {
 			
 			/** @var $service Tx_Coreapi_Service_ExtensionApiService */
 			$service = $this->objectManager->get('Tx_Coreapi_Service_ExtensionApiService');
-			$data = $service->importExtension($file);
+			$data = $service->importExtension($file,$location,$overwrite);
 			
 		} catch (Exception $e) {
 			
@@ -309,8 +313,8 @@ class Tx_Coreapi_Command_ExtensionApiCommandController extends Tx_Extbase_MVC_Co
 			
 		}
 		
-		$this->outputLine(sprintf('Extension "%s" has been imported from repository!', $key));
-
+		$this->outputLine(sprintf('Extension "%s" has been imported!', $data['extKey']));
+		
 	}
 
 

@@ -368,6 +368,8 @@ class Tx_Coreapi_Service_ExtensionApiService {
 	 * @return void
 	 */
 	public function importExtension($file,$location='L',$overwrite = FALSE){
+		
+		$return = array();
 
 		if(!is_file($file)){
 			
@@ -406,22 +408,25 @@ class Tx_Coreapi_Service_ExtensionApiService {
 			throw new InvalidArgumentException(sprintf('File "%s" is of a wrong format!',$file));
 			
 		}
+		
+		$return['extKey'] = $extKey;
+		
 			
 		if (!$overwrite) {
 			$location = ($location==='G' || $location==='S') ? $location : 'L';
 			$comingExtPath = tx_em_Tools::typePath($location) . $extKey . '/';
 			if (@is_dir($comingExtPath)) {
 
-				throw new InvalidArgumentException(sprintf('Extension "%s" already exists at "%s"!',$extKey,$commingExtPath));
+				throw new InvalidArgumentException(sprintf('Extension "%s" already exists at "%s"!',$extKey,$comingExtPath));
 				
 			} 
 		} 
 
 		$install = t3lib_div::makeInstance('tx_em_Install', $this);
 		$install->setSilentMode(TRUE);
-		$install->installExtension($fetchData, $location, $version, $file, $dontDelete);
-		
+		$content = $install->installExtension($fetchData, $location, null, $file, !$overwrite);
 			
+		return $return;
 	}
 
 
