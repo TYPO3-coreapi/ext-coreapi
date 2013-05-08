@@ -40,16 +40,6 @@ class Tx_Coreapi_Service_ExtensionApiService {
 	extension:refresh           Refreshes the local cache of all extensions available in TER
 */
 
-	public function __construct(){
-
-		if (version_compare(TYPO3_version, '6.0.0', '<')) {
-
-			$this->extensionList = t3lib_div::makeInstance('tx_em_Extensions_List', $this);
-		
-		}
-	}
-
-
 
 	/**
 	 * Get information about an extension
@@ -156,6 +146,8 @@ class Tx_Coreapi_Service_ExtensionApiService {
 		}
 		
 		//update typo3conf/localconf.php
+		$this->extensionList = t3lib_div::makeInstance('tx_em_Extensions_List', $this);
+		
 		$install = t3lib_div::makeInstance('tx_em_Install', $this);
 		$install->setSilentMode(TRUE);
 		$install->writeNewExtensionList($newlist);
@@ -220,6 +212,9 @@ class Tx_Coreapi_Service_ExtensionApiService {
 			throw new RuntimeException(sprintf('Extension "%s" could not be installed!', $key));
 
 		}
+		
+		//update typo3conf/localconf.php
+		$this->extensionList = t3lib_div::makeInstance('tx_em_Extensions_List', $this);
 
 		$install = t3lib_div::makeInstance('tx_em_Install', $this);
 		$install->setSilentMode(TRUE);
@@ -290,7 +285,6 @@ class Tx_Coreapi_Service_ExtensionApiService {
 			$extAbsPath,
 			$GLOBALS['BACK_PATH']
 		);
-		
 		
 
 		//check for unknow configuration settings		
@@ -368,13 +362,66 @@ class Tx_Coreapi_Service_ExtensionApiService {
 	/**
 	 * Imports extension from file
 	 * 
-	 * @param string $file file
+	 * @param string $file path to t3x file
+	 * @param string $location where to import the extension. S = typo3/sysext, G = typo3/ext, L = typo3conf/ext
+	 * @param boolean $overwrite overwrite the extension if it already exists
 	 * @return void
 	 */
-	public function importExtension($file){
+	public function importExtension($file,$location='L',$overwrite = FALSE){
 
-		throw new RuntimeException('importExtension not implemented yet');
+		if(!is_file($file)){
+			
+			throw new InvalidArgumentException(sprintf('File "%s" does not exist!',$file));
+		
+		}
+		
+		$fileContent = t3lib_div::getUrl($file);
+		
+		if (!$fileContent) {
 
+			throw new InvalidArgumentException(sprintf('File "%s" is empty!',$file));
+			
+		}
+
+		//some dependencies
+		$this->xmlHandler = t3lib_div::makeInstance('tx_em_Tools_XmlHandler');
+		$this->extensionList = t3lib_div::makeInstance('tx_em_Extensions_List', $this);
+		$this->terConnection = t3lib_div::makeInstance('tx_em_Connection_Ter', $this);
+		$this->extensionDetails = t3lib_div::makeInstance('tx_em_Extensions_Details', $this);
+
+		
+		$fetchData = $this->terConnection->decodeExchangeData($fileContent);
+		
+		
+		if(!is_array($fetchData)){
+			
+			throw new InvalidArgumentException(sprintf('File "%s" is of a wrong format!',$file));
+		
+		}
+
+		$extKey = $fetchData[0]['extKey'];
+		
+		if(!$extKey){
+
+			throw new InvalidArgumentException(sprintf('File "%s" is of a wrong format!',$file));
+			
+		}
+			
+		if (!$overwrite) {
+			$location = ($location==='G' || $location==='S') ? $location : 'L';
+			$comingExtPath = tx_em_Tools::typePath($location) . $extKey . '/';
+			if (@is_dir($comingExtPath)) {
+
+				throw new InvalidArgumentException(sprintf('Extension "%s" already exists at "%s"!',$extKey,$commingExtPath));
+				
+			} 
+		} 
+
+		$install = t3lib_div::makeInstance('tx_em_Install', $this);
+		$install->setSilentMode(TRUE);
+		$install->installExtension($fetchData, $location, $version, $file, $dontDelete);
+		
+			
 	}
 
 
