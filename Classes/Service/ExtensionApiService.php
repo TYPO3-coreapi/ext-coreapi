@@ -291,6 +291,19 @@ class Tx_Coreapi_Service_ExtensionApiService {
 			$GLOBALS['BACK_PATH']
 		);
 		
+		
+
+		//check for unknow configuration settings		
+		foreach($conf as $k => $v){
+			
+			if(!isset($constants[$k])){
+
+				throw new InvalidArgumentException(sprintf('No configuration setting with name "%s" for extension "%s"!', $k, $key));
+				
+			}
+						
+		}
+		
 
 		// get existing configuration
 		$arr = unserialize($TYPO3_CONF_VARS['EXT']['extConf'][$key]);

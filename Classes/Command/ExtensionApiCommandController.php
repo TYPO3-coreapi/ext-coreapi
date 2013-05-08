@@ -229,6 +229,10 @@ class Tx_Coreapi_Command_ExtensionApiCommandController extends Tx_Extbase_MVC_Co
 					if(strstr($arg,'=')){
 						$parts = explode('=',$arg,2);
 						$conf[$parts[0]] = $parts[1];
+					} else {
+
+						throw new InvalidArgumentException(sprintf('Invalid argument "%s"!', $arg));
+						
 					}
 							
 				}
