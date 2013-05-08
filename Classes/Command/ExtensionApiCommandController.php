@@ -130,7 +130,7 @@ class Tx_Coreapi_Command_ExtensionApiCommandController extends Tx_Extbase_MVC_Co
 	
 	
 	/**
-	 * Install(load) an extension
+	 * Install(activate) an extension
 	 *
 	 * @param string $key extension key
 	 * @return void
@@ -157,7 +157,7 @@ class Tx_Coreapi_Command_ExtensionApiCommandController extends Tx_Extbase_MVC_Co
 
 
 	/**
-	 * Install(unload) an extension
+	 * UnInstall(deactivate) an extension
 	 *
 	 * @param string $key extension key
 	 * @return void
@@ -264,16 +264,18 @@ class Tx_Coreapi_Command_ExtensionApiCommandController extends Tx_Extbase_MVC_Co
 	 * 
 	 * @param string $key extension key
 	 * @param string $version
+	 * @param string $location where to put the extension. S = typo3/sysext, G = typo3/ext, L = typo3conf/ext
+	 * @param string $overwrite overwrite the extension if it already exists
 	 * @return void
 	 */
 
-	public function fetchCommand($key){
+	public function fetchCommand($key, $version='', $location='L', $overwrite = FALSE){
 
 		try {
 			
 			/** @var $service Tx_Coreapi_Service_ExtensionApiService */
 			$service = $this->objectManager->get('Tx_Coreapi_Service_ExtensionApiService');
-			$data = $service->fetchExtension($key,$version);
+			$data = $service->fetchExtension($key, $version, $location, $overwrite);
 			
 		} catch (Exception $e) {
 			
@@ -296,7 +298,7 @@ class Tx_Coreapi_Command_ExtensionApiCommandController extends Tx_Extbase_MVC_Co
 	 * @return void
 	 */
 
-	public function importCommand($file,$location='L',$overwrite=FALSE){
+	public function importCommand($file, $location='L', $overwrite = FALSE){
 
 		$data = array();
 

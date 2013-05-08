@@ -185,6 +185,7 @@ class Tx_Coreapi_Service_ExtensionApiService {
 		
 		}
 		
+		
 		// checks if extension exists		
 		if (!$this->exist($key)) {
 			
@@ -198,6 +199,17 @@ class Tx_Coreapi_Service_ExtensionApiService {
 			throw new InvalidArgumentException(sprintf('Extension "%s" is not installed!', $key));
 
 		}
+		
+		
+		
+		$requiredExtList = t3lib_div::trimExplode(',',t3lib_extMgm::getRequiredExtensionList());
+		if (in_array($key, $requiredExtList)) {		
+
+			throw new InvalidArgumentException(sprintf('Extension "%s" is a required extension and cannot be uninstalled!', $key));
+		
+		}
+		
+		
 
 		//check if localconf.php is writable
 		if (!t3lib_extMgm::isLocalconfWritable()) {
@@ -329,7 +341,6 @@ class Tx_Coreapi_Service_ExtensionApiService {
 		$tsStyleConfig->ext_procesInput(array('data'=>$conf), array(), $constants, array());
 		
 		// current configuration is merged with incoming configuration
-		// NOTE: incoming configuration must contain ALL settings for the extension
 		$arr = $tsStyleConfig->ext_mergeIncomingWithExisting($arr);
 			
 		// write configuration to typo3conf/localconf.php
@@ -351,7 +362,34 @@ class Tx_Coreapi_Service_ExtensionApiService {
 	 * @param string $key extension key
 	 * @return void
 	 */
-	public function fetchExtension($key){
+	public function fetchExtension($key,$version='', $location='L', $repository = ''){
+
+		
+		if(!tx_em_Tools::importAsType($location)){
+			
+			if($location === 'G'){
+				throw new InvalidArgumentException(sprintf('Global installation (%s) is not allowed!',$location));
+			}
+
+			if($location === 'L'){
+				throw new InvalidArgumentException(sprintf('Local installation (%s) is not allowed!',$location));
+			}
+
+			if($location === 'S'){
+				throw new InvalidArgumentException(sprintf('System installation (%s) is not allowed!',$location));
+			}
+			
+			throw new InvalidArgumentException(sprintf('Unknown location "%s"!',$location));
+			
+		}		
+
+
+		//some dependencies
+		$this->xmlHandler = t3lib_div::makeInstance('tx_em_Tools_XmlHandler');
+		$this->extensionList = t3lib_div::makeInstance('tx_em_Extensions_List', $this);
+		$this->terConnection = t3lib_div::makeInstance('tx_em_Connection_Ter', $this);
+		$this->extensionDetails = t3lib_div::makeInstance('tx_em_Extensions_Details', $this);
+		
 
 		throw new RuntimeException('fetchExtension not implemented yet');
 
@@ -376,6 +414,27 @@ class Tx_Coreapi_Service_ExtensionApiService {
 			throw new InvalidArgumentException(sprintf('File "%s" does not exist!',$file));
 		
 		}
+		
+		
+		if(!tx_em_Tools::importAsType($location)){
+			
+			if($location === 'G'){
+				throw new InvalidArgumentException(sprintf('Global installation (%s) is not allowed!',$location));
+			}
+
+			if($location === 'L'){
+				throw new InvalidArgumentException(sprintf('Local installation (%s) is not allowed!',$location));
+			}
+
+			if($location === 'S'){
+				throw new InvalidArgumentException(sprintf('System installation (%s) is not allowed!',$location));
+			}
+
+			throw new InvalidArgumentException(sprintf('Unknown location "%s"!',$location));
+			
+		}		
+		
+		
 		
 		$fileContent = t3lib_div::getUrl($file);
 		
@@ -437,6 +496,10 @@ class Tx_Coreapi_Service_ExtensionApiService {
 	 * @return void
 	 */
 	public function exist($key){
+
+		if(!is_object($this->extensionList)){
+			$this->extensionList = t3lib_div::makeInstance('tx_em_Extensions_List', $this);
+		}
 
 		list($list,) = $this->extensionList->getInstalledExtensions();
 				
