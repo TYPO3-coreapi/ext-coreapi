@@ -424,38 +424,51 @@ class Tx_Coreapi_Service_ExtensionApiService {
 		}
 
 		//get mirrors
-		if (!strlen($mirror)) {
+		$mirrors = array();
+		
+		$mfile = t3lib_div::tempnam('mirrors');
+		$mirrorsFile = t3lib_div::getUrl($GLOBALS['TYPO3_CONF_VARS']['EXT']['em_mirrorListURL'], 0);
+		
+		if ($mirrorsFile===FALSE) {
 			
-			$mfile = t3lib_div::tempnam('mirrors');
-			$mirrorsFile = t3lib_div::getUrl($GLOBALS['TYPO3_CONF_VARS']['EXT']['em_mirrorListURL'], 0);
+			t3lib_div::unlink_tempfile($mfile);
 			
-			if ($mirrorsFile===FALSE) {
-				t3lib_div::unlink_tempfile($mfile);
-				
-				throw new RuntimeException('Could not retrieve the list of mirrors!');
-				
-			} else {
-				
-				t3lib_div::writeFile($mfile, $mirrorsFile);
-				$mirrors = implode('', gzfile($mfile));
-				t3lib_div::unlink_tempfile($mfile);
+			throw new RuntimeException('Could not retrieve the list of mirrors!');
 			
-				$mirrors = $this->xmlHandler->parseMirrorsXML($mirrors);
-				
-				if (is_array($mirrors) && count($mirrors)) {
-					
-					$rand = array_rand($mirrors);
-					$mirror = 'http://' . $mirrors[$rand]['host'] . $mirrors[$rand]['path'];
-					
-				} else {
-					
-					throw new RuntimeException('No mirrors found!');
-					
-				}
-			}
+		} else {
+			
+			t3lib_div::writeFile($mfile, $mirrorsFile);
+			$mirrors = implode('', gzfile($mfile));
+			t3lib_div::unlink_tempfile($mfile);
+			$mirrors = $this->xmlHandler->parseMirrorsXML($mirrors);
+			
 		}
 		
-		$fetchData = $this->terConnection->fetchExtension($key, $version, $this->xmlHandler->extensionsXML[$key]['versions'][$version]['t3xfilemd5'], $mirror);
+		if ((!is_array($mirrors)) || (count($mirrors) < 1)) {
+				
+				throw new RuntimeException('No mirrors found!');
+				
+		}
+		
+		
+		$mirrorurl = '';
+		
+		if (!strlen($mirror)) {
+				
+			$rand = array_rand($mirrors);
+			$mirrorurl = 'http://' . $mirrors[$rand]['host'] . $mirrors[$rand]['path'];
+
+		} elseif(isset($mirrors[$mirror])){
+			
+			$mirrorurl = 'http://' . $mirrors[$mirror]['host'] . $mirrors[$mirror]['path'];
+			
+		} else {
+			
+			throw new InvalidArgumentException(sprintf('Mirror "%s" does not exist',$mirror));
+			
+		}
+
+		$fetchData = $this->terConnection->fetchExtension($key, $version, $this->xmlHandler->extensionsXML[$key]['versions'][$version]['t3xfilemd5'], $mirrorurl);
 
 		if(!is_array($fetchData)){
 			
@@ -473,7 +486,6 @@ class Tx_Coreapi_Service_ExtensionApiService {
 
 		$return['extKey'] = $extKey;
 		$return['version'] = $fetchData[0]['EM_CONF']['version'];
-		
 		
 		$install = t3lib_div::makeInstance('tx_em_Install', $this);
 		$install->setSilentMode(TRUE);
