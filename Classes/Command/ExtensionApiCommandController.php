@@ -266,16 +266,18 @@ class Tx_Coreapi_Command_ExtensionApiCommandController extends Tx_Extbase_MVC_Co
 	 * @param string $version
 	 * @param string $location where to put the extension. S = typo3/sysext, G = typo3/ext, L = typo3conf/ext
 	 * @param string $overwrite overwrite the extension if it already exists
+	 * @param string $mirror mirror URL
 	 * @return void
 	 */
 
-	public function fetchCommand($key, $version='', $location='L', $overwrite = FALSE){
+	public function fetchCommand($key, $version='', $location='L', $overwrite = FALSE, $mirror = ''){
 
 		try {
 			
 			/** @var $service Tx_Coreapi_Service_ExtensionApiService */
 			$service = $this->objectManager->get('Tx_Coreapi_Service_ExtensionApiService');
-			$data = $service->fetchExtension($key, $version, $location, $overwrite);
+			$data = $service->fetchExtension($key, $version, $location, $overwrite,$mirror);
+			$this->outputLine(sprintf('Extension "%s" version %s has been fetched from repository!', $data['extKey'],$data['version']));
 			
 		} catch (Exception $e) {
 			
@@ -284,8 +286,6 @@ class Tx_Coreapi_Command_ExtensionApiCommandController extends Tx_Extbase_MVC_Co
 			
 		}
 		
-		$this->outputLine(sprintf('Extension "%s" has been fetched from repository!', $key));
-
 	}
 
 
@@ -300,13 +300,12 @@ class Tx_Coreapi_Command_ExtensionApiCommandController extends Tx_Extbase_MVC_Co
 
 	public function importCommand($file, $location='L', $overwrite = FALSE){
 
-		$data = array();
-
 		try {
 			
 			/** @var $service Tx_Coreapi_Service_ExtensionApiService */
 			$service = $this->objectManager->get('Tx_Coreapi_Service_ExtensionApiService');
 			$data = $service->importExtension($file,$location,$overwrite);
+			$this->outputLine(sprintf('Extension "%s" has been imported!', $data['extKey']));
 			
 		} catch (Exception $e) {
 			
@@ -314,8 +313,6 @@ class Tx_Coreapi_Command_ExtensionApiCommandController extends Tx_Extbase_MVC_Co
 			$this->quit();
 			
 		}
-		
-		$this->outputLine(sprintf('Extension "%s" has been imported!', $data['extKey']));
 		
 	}
 

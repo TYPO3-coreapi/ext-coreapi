@@ -201,7 +201,7 @@ class Tx_Coreapi_Service_ExtensionApiService {
 		}
 		
 		
-		
+		//check if this is a required extension (such as "cms") that cannot be uninstalled
 		$requiredExtList = t3lib_div::trimExplode(',',t3lib_extMgm::getRequiredExtensionList());
 		if (in_array($key, $requiredExtList)) {		
 
@@ -362,8 +362,9 @@ class Tx_Coreapi_Service_ExtensionApiService {
 	 * @param string $key extension key
 	 * @return void
 	 */
-	public function fetchExtension($key,$version='', $location='L', $repository = ''){
-
+	public function fetchExtension($key, $version='', $location='L', $overwrite = FALSE, $mirror = ''){
+		
+		$return = array();
 		
 		if(!tx_em_Tools::importAsType($location)){
 			
@@ -380,19 +381,105 @@ class Tx_Coreapi_Service_ExtensionApiService {
 			}
 			
 			throw new InvalidArgumentException(sprintf('Unknown location "%s"!',$location));
-			
+
 		}		
 
+		if (!$overwrite) {
+			$location = ($location==='G' || $location==='S') ? $location : 'L';
+			$comingExtPath = tx_em_Tools::typePath($location) . $key . '/';
+			if (@is_dir($comingExtPath)) {
+
+				throw new InvalidArgumentException(sprintf('Extension "%s" already exists at "%s"!',$key,$comingExtPath));
+
+			} 
+		}
 
 		//some dependencies
 		$this->xmlHandler = t3lib_div::makeInstance('tx_em_Tools_XmlHandler');
 		$this->extensionList = t3lib_div::makeInstance('tx_em_Extensions_List', $this);
 		$this->terConnection = t3lib_div::makeInstance('tx_em_Connection_Ter', $this);
 		$this->extensionDetails = t3lib_div::makeInstance('tx_em_Extensions_Details', $this);
+
+		//check extension list
+		$this->xmlHandler->searchExtensionsXMLExact($key, '', '', TRUE, TRUE);
+		if(!isset($this->xmlHandler->extensionsXML[$key])){
+			
+			throw new InvalidArgumentException(sprintf('Extension "%s" was not found',$key));
+
+		}
+
+		//get latest version
+		if (!strlen($version)) {
+			$versions = array_keys($this->xmlHandler->extensionsXML[$key]['versions']);
+				// sort version numbers ascending to pick the highest version
+			natsort($versions);
+			$version = end($versions);
+		}
 		
+		//check if version exists
+		if(!isset($this->xmlHandler->extensionsXML[$key]['versions'][$version])){
+			
+			throw new InvalidArgumentException(sprintf('Version %s of extension "%s" does not exist',$version,$key));
+			
+		}
 
-		throw new RuntimeException('fetchExtension not implemented yet');
+		//get mirrors
+		if (!strlen($mirror)) {
+			
+			$mfile = t3lib_div::tempnam('mirrors');
+			$mirrorsFile = t3lib_div::getUrl($GLOBALS['TYPO3_CONF_VARS']['EXT']['em_mirrorListURL'], 0);
+			
+			if ($mirrorsFile===FALSE) {
+				t3lib_div::unlink_tempfile($mfile);
+				
+				throw new RuntimeException('Could not retrieve the list of mirrors!');
+				
+			} else {
+				
+				t3lib_div::writeFile($mfile, $mirrorsFile);
+				$mirrors = implode('', gzfile($mfile));
+				t3lib_div::unlink_tempfile($mfile);
+			
+				$mirrors = $this->xmlHandler->parseMirrorsXML($mirrors);
+				
+				if (is_array($mirrors) && count($mirrors)) {
+					
+					$rand = array_rand($mirrors);
+					$mirror = 'http://' . $mirrors[$rand]['host'] . $mirrors[$rand]['path'];
+					
+				} else {
+					
+					throw new RuntimeException('No mirrors found!');
+					
+				}
+			}
+		}
+		
+		$fetchData = $this->terConnection->fetchExtension($key, $version, $this->xmlHandler->extensionsXML[$key]['versions'][$version]['t3xfilemd5'], $mirror);
 
+		if(!is_array($fetchData)){
+			
+			throw new RuntimeException($fetchData);
+		
+		}
+
+		$extKey = $fetchData[0]['extKey'];
+		
+		if(!$extKey){
+
+			throw new RuntimeException($fetchData);
+
+		}
+
+		$return['extKey'] = $extKey;
+		$return['version'] = $fetchData[0]['EM_CONF']['version'];
+		
+		
+		$install = t3lib_div::makeInstance('tx_em_Install', $this);
+		$install->setSilentMode(TRUE);
+		$content = $install->installExtension($fetchData, $location, null, '', !$overwrite);
+		
+		return $return;
 	}
 
 
@@ -449,10 +536,8 @@ class Tx_Coreapi_Service_ExtensionApiService {
 		$this->extensionList = t3lib_div::makeInstance('tx_em_Extensions_List', $this);
 		$this->terConnection = t3lib_div::makeInstance('tx_em_Connection_Ter', $this);
 		$this->extensionDetails = t3lib_div::makeInstance('tx_em_Extensions_Details', $this);
-
 		
 		$fetchData = $this->terConnection->decodeExchangeData($fileContent);
-		
 		
 		if(!is_array($fetchData)){
 			
@@ -469,7 +554,7 @@ class Tx_Coreapi_Service_ExtensionApiService {
 		}
 		
 		$return['extKey'] = $extKey;
-		
+		$return['version'] = $fetchData[0]['EM_CONF']['version'];
 			
 		if (!$overwrite) {
 			$location = ($location==='G' || $location==='S') ? $location : 'L';
