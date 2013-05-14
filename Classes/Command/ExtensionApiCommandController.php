@@ -263,7 +263,7 @@ class Tx_Coreapi_Command_ExtensionApiCommandController extends Tx_Extbase_MVC_Co
 	 * Fetch an extension from TER
 	 * 
 	 * @param string $key extension key
-	 * @param string $version
+	 * @param string $version the exact version of the extension, otherwise the latest will be picked
 	 * @param string $location where to put the extension. S = typo3/sysext, G = typo3/ext, L = typo3conf/ext
 	 * @param string $overwrite overwrite the extension if it already exists
 	 * @param string $mirror mirror URL
