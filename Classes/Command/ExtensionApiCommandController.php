@@ -153,7 +153,6 @@ class Tx_Coreapi_Command_ExtensionApiCommandController extends Tx_Extbase_MVC_Co
 		$this->outputLine(sprintf('Extension "%s" is now installed!', $key));
 		
 	}
-	
 
 
 	/**
@@ -188,18 +187,25 @@ class Tx_Coreapi_Command_ExtensionApiCommandController extends Tx_Extbase_MVC_Co
 	 * 
 	 * This command enables you to configure an extension.
 	 * 
-	 * You can use this in two ways
+	 * examples:
 	 * 
-	 * 1) extensionkey + path to file containing a configuration for the extension
-	 * example: ./cli_dispatch.phpsh extbase extensionapi:configure rtehtmlarea C:\rteconf.txt
+	 * [1] Using a standard formatted ini-file
+	 * ./cli_dispatch.phpsh extbase extensionapi:configure rtehtmlarea --configfile=C:\rteconf.txt
 	 * 
-	 * 2) extensionkey + key=value pair for each setting you want to change
-	 * example: ./cli_dispatch.phpsh extbase extensionapi:configure rtehtmlarea enableImages=1 allowStyleAttribute=0
+	 * [2] Adding configuration settings directly on the command line
+	 * ./cli_dispatch.phpsh extbase extensionapi:configure rtehtmlarea --settings="enableImages=1;allowStyleAttribute=0"
 	 *
+	 * [3] A combination of [1] and [2]
+	 * ./cli_dispatch.phpsh extbase extensionapi:configure rtehtmlarea --configfile=C:\rteconf.txt --settings="enableImages=1;allowStyleAttribute=0"
+	 * 
+	 * 
+	 *  
 	 * @param string $key extension key
+	 * @param string $configfile path to file containing configuration settings. Must be formatted as a standard ini-file
+	 * @param string $settings string containing configuration settings separated on the form "k1=v1;k2=v2;"
 	 * @return void
 	 */
-	public function configureCommand($key) {
+	public function configureCommand($key, $configfile='',$settings='') {
 		
 		global $TYPO3_CONF_VARS;
 		
@@ -207,44 +213,36 @@ class Tx_Coreapi_Command_ExtensionApiCommandController extends Tx_Extbase_MVC_Co
 			
 			/** @var $service Tx_Coreapi_Service_ExtensionApiService */
 			$service = $this->objectManager->get('Tx_Coreapi_Service_ExtensionApiService');
-				
-			$args = $this->request->getExceedingArguments();
 			
 			$conf = array();
 			
-			if(count($args) == 1 && isset($args[0]) && is_file($args[0])){
-			
-				$conf =  parse_ini_file($args[0]);
-				
-				if(empty($conf)){
-
-					throw new InvalidArgumentException(sprintf('File did not contain any configuration settings!', $key));
+			if(is_file($configfile)){
 					
-				}
-			
-			} else {
-				
-				foreach($args as $arg){
-					
-					if(strstr($arg,'=')){
-						$parts = explode('=',$arg,2);
-						$conf[$parts[0]] = $parts[1];
-					} else {
-
-						throw new InvalidArgumentException(sprintf('Invalid argument "%s"!', $arg));
-						
-					}
-							
-				}
-				
-				if(empty($conf)){
-
-					throw new InvalidArgumentException(sprintf('No configuration settings!', $key));
-					
-				}
+				$conf = parse_ini_file($configfile);
 				
 			}
 			
+			if(strlen($settings)){
+				$arr = explode(';',$settings);
+				foreach($arr as $v){
+					if(strpos($v,'=') === FALSE){
+						
+						throw new InvalidArgumentException(sprintf('Ill-formed setting "%s"!', $v));
+						
+					}
+					$parts = t3lib_div::trimExplode('=', $v,FALSE,2);
+					
+					if(!empty($parts[0])){
+						$conf[$parts[0]] = $parts[1];
+					}
+				}
+			}
+			
+			if(empty($conf)){
+				
+				throw new InvalidArgumentException(sprintf('No configuration settings!', $key));
+				
+			}
 			
 			$data = $service->configureExtension($key,$conf);
 			
