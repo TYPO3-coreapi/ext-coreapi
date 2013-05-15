@@ -179,7 +179,7 @@ class Tx_Coreapi_Service_ExtensionApiService {
 		}
 		
 		//check if extension is this extension (coreapi)
-		if ($ext == 'coreapi') {
+		if ($key == 'coreapi') {
 			
 			throw new InvalidArgumentException(sprintf('Extension "%s" cannot be uninstalled!', $key));
 		
