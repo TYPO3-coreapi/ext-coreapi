@@ -30,7 +30,30 @@
  * @package TYPO3
  * @subpackage tx_coreapi
  */
-class Tx_Coreapi_Cli_Dispatcher {
+class Tx_Coreapi_Cli_Dispatcher extends t3lib_cli {
+	
+	
+	var $cli_help = array(
+		'name' => 'coreapi',
+		'synopsis' => './cli_dispatch.phpsh service:command [options] arguments',
+		'description' => '
+Coreapi provides a set of services/commands for doing the most common admin task in TYPO3 by CLI instead of doing it in the backend/browser.
+Currently the following commands are supported:
+
+###COMMANDS###
+',
+		'examples' => '
+./cli_dispatch.phpsh coreapi site:info
+./cli_dispatch.phpsh coreapi cache:clearallcaches
+./cli_dispatch.phpsh coreapi extension:info rtehtmlarea
+./cli_dispatch.phpsh coreapi site:createsysnews "title" "text"',
+		'options' => 'use "./cli_dispatch.phpsh coreapi help service:command" to get help on the arguments and options of a specific command
+		',
+		'license' => 'GNU GPL - free software!',
+		'author' => 'Tobias Liebig',
+	);
+	
+		
 
 	const MAXIMUM_LINE_LENGTH = 79;
 
@@ -50,11 +73,15 @@ class Tx_Coreapi_Cli_Dispatcher {
 	 * @return void
 	 */
 	public function __construct() {
-		if (!isset($_SERVER['argv'][1])) {
-			$this->error('No service defined');
+		
+		parent::__construct();
+		
+		if(!isset($this->cli_args['_DEFAULT'][1]) || $this->cli_args['_DEFAULT'][1] === 'help'){
+			$this->cli_help();
+			die();
 		}
-
-		$split = explode(':', $_SERVER['argv'][1]);
+		
+		$split = explode(':', $this->cli_args['_DEFAULT'][1]);
 		if (count($split) === 1) {
 			$this->error('CLI calls need to be like coreapi cache:clearallcaches');
 		} elseif (count($split) !== 2) {
@@ -63,165 +90,265 @@ class Tx_Coreapi_Cli_Dispatcher {
 
 		$this->service = strtolower($split[0]);
 		$this->command = strtolower($split[1]);
+		
 	}
 
 
+	/**
+	 * Starts the script
+	 * @return void
+	 */
 	public function start() {
+		
 		try {
-			switch ($this->service) {
-				case 'cache':
-					$this->cacheApi();
-					break;
-				case 'database':
-					$this->databaseApi();
-					break;
-				case 'extension':
-					$this->extensionApi();
-					break;
-				case 'site':
-					$this->siteApi();
-					break;
-				default:
-					$this->error(sprintf('Service "%s" not supported', $this->service));
+			
+			$commandMethod = $this->service.ucfirst($this->command).'Command';
+			
+			if(method_exists($this, $commandMethod)){
+				
+				$givenArgs = array_slice($this->cli_args['_DEFAULT'],2);
+				
+				$method = new ReflectionMethod(get_class($this),$commandMethod);
+				
+				$args = array();
+				
+				foreach($method->getParameters() as $param){
+					if($param->isOptional()){
+						
+						$option = '--'.$param->getName();
+						
+						if($this->cli_isArg($option)){
+							$args = $this->cli_argValue($option);
+						}
+						
+					} else {
+						
+						$args[] = array_shift($givenArgs);
+						
+					}
+				}
+				
+				//invoke command with given args and options
+				$method->invokeArgs($this,$args);
+				
+			} else {
+				
+				throw new InvalidArgumentException('Service does not exist or command not supported');
+				
 			}
+			
 		} catch (Exception $e) {
 			$errorMessage = sprintf('ERROR: Error in service "%s" and command "%s"": %s!', $this->service, $this->command, $e->getMessage());
 			$this->outputLine($errorMessage);
 		}
 	}
-
-	protected function cacheApi() {
+	
+	
+	/**
+	 * Clear all caches
+	 * 
+	 * Clears all TYPO3 caches
+	 *
+	 * @return void
+	 */
+	public function cacheClearallcachesCommand(){
+		
 		$cacheApiService = t3lib_div::makeInstance('Tx_Coreapi_Service_CacheApiService');
 		$cacheApiService->initializeObject();
 
-		switch ($this->command) {
-			case 'clearallcaches':
-				$cacheApiService->clearAllCaches();
-				$this->outputLine('All caches cleared');
-				break;
-			case 'clearconfigurationcache':
-				$cacheApiService->clearConfigurationCache();
-				$this->outputLine('Configuration cache cleared');
-				break;
-			case 'clearpagecache':
-				$cacheApiService->clearPageCache();
-				$this->outputLine('Page cache cleared');
-				break;
-			default:
-				$this->error(sprintf('Command "%s" not supported', $this->command));
-		}
+		$cacheApiService->clearAllCaches();
+		$this->outputLine('All caches cleared');
+		
 	}
-
-	protected function databaseApi() {
-		$databaseApiService = t3lib_div::makeInstance('Tx_Coreapi_Service_DatabaseApiService');
-
-		switch ($this->command) {
-			case 'databasecompare':
-				if ($_SERVER['argv'][2] === 'help') {
-					$actions = $databaseApiService->databaseCompareAvailableActions();
-					$this->outputTable($actions);
-				} else {
-					$databaseApiService->databaseCompare($_SERVER['argv'][2]);
-				}
-				break;
-			default:
-				$this->error(sprintf('Command "%s" not supported', $this->command));
-		}
-	}
-
-		/**
-	 * Implement the extensionapi service commands
+	
+	
+	/**
+	 * Clear configuration cache (temp_CACHED_..)
+	 * 
+	 * Deletes the temp_CACHED_* files in /typo3conf
 	 *
 	 * @return void
 	 */
-	protected function extensionApi() {
-		$extensionApiService = t3lib_div::makeInstance('Tx_Coreapi_Service_ExtensionApiService');
+	public function cacheClearconfigurationcacheCommand(){
 
-		switch ($this->command) {
-			case 'info':
-					// @todo: remove duplicated code
-				$data = $extensionApiService->getExtensionInformation($_SERVER['argv'][2]);
-				$this->outputLine('');
-				$this->outputLine('EXTENSION "%s": %s %s', array(strtoupper($_SERVER['argv'][2]), $data['em_conf']['version'], $data['em_conf']['state']));
-				$this->outputLine(str_repeat('-', self::MAXIMUM_LINE_LENGTH));
+		$cacheApiService = t3lib_div::makeInstance('Tx_Coreapi_Service_CacheApiService');
+		$cacheApiService->initializeObject();
 
-				$outputInformation = array();
-				$outputInformation['is installed'] = ($data['is_installed'] ? 'yes' : 'no');
-				foreach($data['em_conf'] as $emConfKey => $emConfValue) {
-						// Skip empty properties
-					if (empty($emConfValue)) {
-						continue;
-					}
-						// Skip properties which are already handled
-					if ($emConfKey === 'title' || $emConfKey === 'version' || $emConfKey === 'state') {
-						continue;
-					}
-					$outputInformation[$emConfKey] = $emConfValue;
-				}
-
-				foreach ($outputInformation as $outputKey => $outputValue) {
-					$description = '';
-					if (is_array($outputValue)) {
-						foreach ($outputValue as $additionalKey => $additionalValue) {
-							if (is_array($additionalValue)) {
-
-								if (empty($additionalValue))  {
-									continue;
-								}
-								$description .= LF . str_repeat(' ', 28) . $additionalKey;
-								$description .= LF;
-								foreach ($additionalValue as $ak => $av) {
-									$description .= str_repeat(' ', 30) . $ak . ': ' . $av . LF;
-								}
-							} else {
-								$description .= LF . str_repeat(' ', 28) . $additionalKey . ': '. $additionalValue;
-							}
-						}
-					} else {
-						$description = wordwrap($outputValue, self::MAXIMUM_LINE_LENGTH - 28, PHP_EOL . str_repeat(' ', 28), TRUE);
-					}
-					$this->outputLine('%-2s%-25s %s', array(' ', $outputKey, $description));
-				}
-				break;
-			case 'updatelist':
-				$extensionApiService->updateMirrors();
-				break;
-			case 'listinstalled':
-				$extensions = $extensionApiService->getInstalledExtensions($_SERVER['argv'][2]);
-				$out = array();
-
-				foreach($extensions as $key => $details) {
-					$title = $key . ' - ' . $details['version'] . '/' . $details['state'];
-					$out[$title] = $details['title'];
-				}
-				$this->outputTable($out);
-				break;
-			default:
-				$this->error(sprintf('Command "%s" not supported', $this->command));
-		}
-
+		$cacheApiService->clearConfigurationCache();
+		$this->outputLine('Configuration cache cleared');
+		
 	}
 
 	/**
-	 * Implement the siteapi service commands
+	 * Clear page cache
+	 * 
+	 * Clears the page cache in TYPO3
 	 *
 	 * @return void
 	 */
-	protected function siteApi() {
-		$siteApiService = t3lib_div::makeInstance('Tx_Coreapi_Service_SiteApiService');
+	public function cacheClearpagecacheCommand(){
 
-		switch ($this->command) {
-			case 'info':
-				$infos = $siteApiService->getSiteInfo();
-				$this->outputTable($infos);
-				break;
-			case 'createsysnews':
-				$siteApiService->createSysNews($_SERVER['argv'][2], $_SERVER['argv'][3]);
-				break;
-			default:
-				$this->error(sprintf('Command "%s" not supported', $this->command));
+		$cacheApiService = t3lib_div::makeInstance('Tx_Coreapi_Service_CacheApiService');
+		$cacheApiService->initializeObject();
+		
+		$cacheApiService->clearPageCache();
+		$this->outputLine('Page cache cleared');
+				
+	}
+
+
+	/**
+	 * Database compare
+	 *
+	 * Leave the argument 'actions' empty or use "help" to see the available ones
+	 *
+	 * @param string $actions List of actions which will be executed
+	 * @return void
+	 * @example ./cli_dispatch.phpsh coreapi database:databasecompare 1
+	 */
+	public function databaseDatabasecompareCommand($actions){
+			
+		$databaseApiService = t3lib_div::makeInstance('Tx_Coreapi_Service_DatabaseApiService');
+			
+		if ($actions === 'help') {
+		
+			$actions = $databaseApiService->databaseCompareAvailableActions();
+			$this->outputTable($actions);
+		
+		} else {
+				
+			$databaseApiService->databaseCompare($actions);
+		
+		}
+		
+	}
+
+	/**
+	 * Information about an extension
+	 * 
+	 * Echo's out a table with information about a specific extension
+	 *
+	 * @param string $extkey extension key
+	 * @return void
+	 * @example ./cli_dispatch.phpsh coreapi extension:info rtehtmlarea
+	 */
+	public function extensionInfoCommand($extkey){
+		
+		$extensionApiService = t3lib_div::makeInstance('Tx_Coreapi_Service_ExtensionApiService');
+		
+		$data = $extensionApiService->getExtensionInformation($extkey);
+		$this->outputLine('');
+		$this->outputLine('EXTENSION "%s": %s %s', array(strtoupper($extkey), $data['em_conf']['version'], $data['em_conf']['state']));
+		$this->outputLine(str_repeat('-', self::MAXIMUM_LINE_LENGTH));
+
+		$outputInformation = array();
+		$outputInformation['is installed'] = ($data['is_installed'] ? 'yes' : 'no');
+		foreach($data['em_conf'] as $emConfKey => $emConfValue) {
+				// Skip empty properties
+			if (empty($emConfValue)) {
+				continue;
+			}
+				// Skip properties which are already handled
+			if ($emConfKey === 'title' || $emConfKey === 'version' || $emConfKey === 'state') {
+				continue;
+			}
+			$outputInformation[$emConfKey] = $emConfValue;
+		}
+
+		foreach ($outputInformation as $outputKey => $outputValue) {
+			$description = '';
+			if (is_array($outputValue)) {
+				foreach ($outputValue as $additionalKey => $additionalValue) {
+					if (is_array($additionalValue)) {
+
+						if (empty($additionalValue))  {
+							continue;
+						}
+						$description .= LF . str_repeat(' ', 28) . $additionalKey;
+						$description .= LF;
+						foreach ($additionalValue as $ak => $av) {
+							$description .= str_repeat(' ', 30) . $ak . ': ' . $av . LF;
+						}
+					} else {
+						$description .= LF . str_repeat(' ', 28) . $additionalKey . ': '. $additionalValue;
+					}
+				}
+			} else {
+				$description = wordwrap($outputValue, self::MAXIMUM_LINE_LENGTH - 28, PHP_EOL . str_repeat(' ', 28), TRUE);
+			}
+			$this->outputLine('%-2s%-25s %s', array(' ', $outputKey, $description));
 		}
 	}
+
+	/**
+	 * Update list
+	 * 
+	 * Update the list of available extensions in the TER
+	 *
+	 * @return void
+	 */
+	public function extensionUpdatelistCommand(){
+		
+		$extensionApiService = t3lib_div::makeInstance('Tx_Coreapi_Service_ExtensionApiService');
+		$extensionApiService->updateMirrors();
+		$this->outputLine('Extension list has been updated.');
+		
+	}
+	
+	/**
+	 * List all installed (loaded) extensions
+	 *
+	 * @param string $type Extension type, can either be L for local, S for system or G for global. Leave it empty for all
+	 * @return void
+	 */
+	public function extensionListinstalledCommand($type=''){
+
+		$extensionApiService = t3lib_div::makeInstance('Tx_Coreapi_Service_ExtensionApiService');
+
+		$extensions = $extensionApiService->getInstalledExtensions($type);
+		$out = array();
+		
+		foreach($extensions as $key => $details) {
+			$title = $key . ' - ' . $details['version'] . '/' . $details['state'];
+			$out[$title] = $details['title'];
+		}
+		$this->outputTable($out);
+		
+	}
+	
+	/**
+	 * Site info
+	 *
+	 * Basic information about the system
+	 *
+	 * @return void
+	 */
+	public function siteInfoCommand(){
+		
+		$siteApiService = t3lib_div::makeInstance('Tx_Coreapi_Service_SiteApiService');
+		$infos = $siteApiService->getSiteInfo();
+		$this->outputTable($infos);
+		
+	}
+	
+	
+	/**
+	 * Create a sys news
+	 *
+	 * Sys news record is displayed at the login page
+	 *
+	 * @param string $header Header text
+	 * @param string $text Basic text
+	 * @return void
+	 */
+	public function siteCreatesysnewsCommand($header, $text){
+
+		$siteApiService = t3lib_div::makeInstance('Tx_Coreapi_Service_SiteApiService');
+		
+		$siteApiService->createSysNews($header, $text);
+		
+	}
+
 
 	/**
 	 * Output a single line
@@ -234,8 +361,9 @@ class Tx_Coreapi_Cli_Dispatcher {
 		if ($arguments !== array()) {
 			$text = vsprintf($text, $arguments);
 		}
-		echo $text . PHP_EOL;
+		$this->cli_echo($text . PHP_EOL);
 	}
+	
 
 	/**
 	 * Output a whole table, maximum 2 cols
@@ -259,9 +387,123 @@ class Tx_Coreapi_Cli_Dispatcher {
 	 * @return void
 	 */
 	protected function error($message) {
-		die('ERROR: ' . $message);
+		
+		$this->cli_echo('ERROR: '.$message, $force);
+		die();
+		
+	}
+	
+	/**
+	 * Display help
+	 * Overridden from parent 
+	 * 
+	 * @return void
+	 */
+	public function cli_help(){
+		
+		if(isset($this->cli_args['_DEFAULT'][1]) && 
+			$this->cli_args['_DEFAULT'][1] === 'help' && 
+			isset($this->cli_args['_DEFAULT'][2]) && 
+			strpos($this->cli_args['_DEFAULT'][2],':') !== FALSE
+		){
+			
+			$this->setHelpFromDocComment($this->cli_args['_DEFAULT'][2]);	
+						
+		} else {
+			
+			$class = new ReflectionClass(get_class($this));
+			$commands = array();
+			foreach($class->getMethods(ReflectionMethod::IS_PUBLIC) as $method){
+				if(preg_match('/([a-z][a-z0-9]*)([A-Z][a-zA-Z0-9]*)Command/',$method->getName(),$matches)){
+					$commands[] = strtolower($matches[1]) . ':' . strtolower($matches[2]);
+				}								
+			}
+			
+			$this->cli_help['description'] = str_replace('###COMMANDS###',implode(PHP_EOL,$commands),$this->cli_help['description']);
+			
+		}
+		
+		parent::cli_help();
+		
+	}
+	
+	
+	protected function setHelpFromDocComment($op){
+		
+		list($service,$command) = explode(':',$op,2);
+		
+		$commandmethod = strtolower($service).ucfirst($command).'Command';
+		
+		if(method_exists($this, $commandmethod)){
+			
+			//extract doc comment
+			$ref = new ReflectionMethod(get_class($this),$commandmethod);
+			
+			$comment = $ref->getDocComment();
+
+			$comment = preg_replace('/\/\*\*\s*(.*)\s*\*\//s','$1',$comment);
+			
+			$lines = explode(PHP_EOL,$comment);
+
+			//get name
+			$name = preg_replace('/^\s*\*\s*(.*)\s*$/i','$1', array_shift($lines) );
+			$this->cli_help['name'] = $name;
+			
+			$description = array();
+			
+			foreach($lines as $n => $l){
+				if(!preg_match('/^\s*\*\s*@(param|return|example)/i',$l)){
+					//add to description
+					$description[] = preg_replace('/^\s*\*\s*(.*)\s*$/i','$1',$l);
+					continue;
+				}
+				break;
+			}
+			
+			$this->cli_help['description'] = trim(implode(PHP_EOL,$description));
+			
+			if(preg_match_all('/@example\s*(.*)/i',$comment,$matches)){
+				$this->cli_help['examples'] = implode(PHP_EOL,$matches[1]);				
+			} else {
+				unset($this->cli_help['examples']);
+			}
+			
+						
+			//get params
+			$params = $ref->getParameters();
+			
+			$args = array();
+			
+			foreach($params as $param){
+				
+				if($param->isOptional()){
+						
+					$option = array();
+					$option[0] = '--'.$param->getName();
+					if(preg_match('/\*\s*@param\s*[a-z0-9_]*\$'.$param->getName().'\s+(.*)/',$comment,$matches)){
+						$option[1] = $matches[1];
+					}
+					$this->cli_options[] = $option;
+					
+				} else {
+					
+					$args[] = strtoupper($param->getName());
+					
+				}
+			}
+			
+			//set synopsis for this
+			$this->cli_help['synopsis'] = './cli_dispatch.phpsh coreapi '.$op.' ###OPTIONS### '.implode(' ',$args);
+			
+		} else {
+
+			$this->error(sprintf('No help available for "%s"',$op).PHP_EOL);
+			
+		}
+		
 	}
 
+	
 }
 
 if ((TYPO3_REQUESTTYPE & TYPO3_REQUESTTYPE_CLI) && basename(PATH_thisScript) == 'cli_dispatch.phpsh') {
