@@ -32,7 +32,6 @@
  */
 class Tx_Coreapi_Cli_Dispatcher extends t3lib_cli {
 	
-	
 	var $cli_help = array(
 		'name' => 'coreapi',
 		'synopsis' => './cli_dispatch.phpsh service:command [options] arguments',
@@ -102,46 +101,56 @@ Currently the following commands are supported:
 		
 		try {
 			
-			$commandMethod = $this->service.ucfirst($this->command).'Command';
+			$command = $this->service.ucfirst($this->command).'Command';
 			
-			if(method_exists($this, $commandMethod)){
-				
-				$givenArgs = array_slice($this->cli_args['_DEFAULT'],2);
-				
-				$method = new ReflectionMethod(get_class($this),$commandMethod);
-				
-				$args = array();
-				
-				foreach($method->getParameters() as $param){
-					if($param->isOptional()){
-						
-						$option = '--'.$param->getName();
-						
-						if($this->cli_isArg($option)){
-							$args = $this->cli_argValue($option);
-						}
-						
-					} else {
-						
-						$args[] = array_shift($givenArgs);
-						
-					}
-				}
-				
-				//invoke command with given args and options
-				$method->invokeArgs($this,$args);
-				
-			} else {
-				
-				throw new InvalidArgumentException('Service does not exist or command not supported');
-				
-			}
+			$this->runCommand($command);
+		
 			
 		} catch (Exception $e) {
 			$errorMessage = sprintf('ERROR: Error in service "%s" and command "%s"": %s!', $this->service, $this->command, $e->getMessage());
 			$this->outputLine($errorMessage);
 		}
 	}
+
+
+
+	protected function runCommand($command){
+
+
+		if(method_exists($this, $command)){
+			
+			$args = array_slice($this->cli_args['_DEFAULT'],2);
+			
+			$method = new ReflectionMethod(get_class($this),$command);
+			
+			foreach($method->getParameters() as $param){
+				
+				if($param->isOptional()){
+					
+					$name = $param->getName();
+					
+					if($this->cli_isArg('--'.$name)){
+						$args[] = $this->cli_argValue('--'.$name);
+					} else {
+						$args[] = $param->getDefaultValue();
+					}
+					
+				} 
+	
+			}
+			
+			//invoke command with given args and options
+			$method->invokeArgs($this,$args);
+			
+		} else {
+			
+			throw new InvalidArgumentException('Service does not exist or command not supported');
+			
+		}
+
+		
+	}
+
 	
 	
 	/**
@@ -436,6 +445,9 @@ Currently the following commands are supported:
 		
 		if(method_exists($this, $commandmethod)){
 			
+			
+			$this->cli_help['options'] = '';
+			
 			//extract doc comment
 			$ref = new ReflectionMethod(get_class($this),$commandmethod);
 			
@@ -448,52 +460,92 @@ Currently the following commands are supported:
 			//get name
 			$name = preg_replace('/^\s*\*\s*(.*)\s*$/i','$1', array_shift($lines) );
 			$this->cli_help['name'] = $name;
-			
+
 			$description = array();
+			$examples = array();
+			$params = array();
 			
 			foreach($lines as $n => $l){
-				if(!preg_match('/^\s*\*\s*@(param|return|example)/i',$l)){
+				
+				if(!preg_match('/^\s*\*\s*@/i',$l)){
 					//add to description
 					$description[] = preg_replace('/^\s*\*\s*(.*)\s*$/i','$1',$l);
 					continue;
 				}
-				break;
+				
+				//params
+				if(preg_match('/^\s*\*\s*@param\s*(?P<type>[a-z0-9_]*)\s+\$(?P<name>[a-z0-9_]*)\s+(?P<description>.*)/i',$l,$matches)){
+					$params[$matches['name']] = array(
+						'type' => $matches['name'],
+						'description' => $matches['description']
+					); 
+					continue;
+				}
+				
+				// examples
+				if(preg_match('/^\s*\*\s*@example\s+(?P<text>.*)/i',$l,$matches)){
+					$examples[] = $matches['text'];
+				}
+				
 			}
 			
 			$this->cli_help['description'] = trim(implode(PHP_EOL,$description));
 			
-			if(preg_match_all('/@example\s*(.*)/i',$comment,$matches)){
-				$this->cli_help['examples'] = implode(PHP_EOL,$matches[1]);				
+			if(!empty($examples)){
+				$this->cli_help['examples'] = implode(PHP_EOL,$examples);					
 			} else {
 				unset($this->cli_help['examples']);
 			}
 			
+			
 						
 			//get params
-			$params = $ref->getParameters();
+			$parameters = $ref->getParameters();
 			
 			$args = array();
 			
-			foreach($params as $param){
+			foreach($parameters as $param){
+				
+				$name = $param->getName();
+				
+				$description = isset($params[$name]) ? $params[$name]['description'] : '';
 				
 				if($param->isOptional()){
-						
-					$option = array();
-					$option[0] = '--'.$param->getName();
-					if(preg_match('/\*\s*@param\s*[a-z0-9_]*\$'.$param->getName().'\s+(.*)/',$comment,$matches)){
-						$option[1] = $matches[1];
-					}
-					$this->cli_options[] = $option;
+					
+					$this->cli_options[] = array('--'.$name,$description);
 					
 				} else {
-					
-					$args[] = strtoupper($param->getName());
+
+					$args[strtoupper($name)] = $description;
 					
 				}
 			}
 			
+			//compile arguments section
+			if(!empty($args)){
+				$maxLen = 0;
+				
+				foreach(array_keys($args) as $argname){
+					if (strlen($argname) > $maxLen) {
+						$maxLen = strlen($argname);
+					}					
+				}
+				
+				$tmp = array();
+				
+				foreach($args as $argname => $description){
+					$tmp[] = $argname . substr($this->cli_indent(rtrim($description), $maxLen + 4), strlen($argname));
+				}
+				
+				$offset = array_search('options',array_keys($this->cli_help));
+				
+				$this->cli_help = array_slice($this->cli_help, 0, $offset, true) +
+				            array('arguments' => LF.implode(LF,$tmp)) +
+				            array_slice($this->cli_help, $offset, NULL, true);
+			}			
+			
 			//set synopsis for this
-			$this->cli_help['synopsis'] = './cli_dispatch.phpsh coreapi '.$op.' ###OPTIONS### '.implode(' ',$args);
+			$this->cli_help['synopsis'] = './cli_dispatch.phpsh coreapi '.$op.' ###OPTIONS### '.implode(' ',array_keys($args));
 			
 		} else {
 
