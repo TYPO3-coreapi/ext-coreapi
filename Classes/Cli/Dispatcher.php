@@ -55,6 +55,10 @@ Currently the following commands are supported:
 		
 
 	const MAXIMUM_LINE_LENGTH = 79;
+	
+	var $commandMethodPattern = '/([a-z][a-z0-9]*)([A-Z][a-zA-Z0-9]*)Command/';
+	
+	
 
 	/**
 	 * @var string service
@@ -159,6 +163,7 @@ Currently the following commands are supported:
 	 * Clears all TYPO3 caches
 	 *
 	 * @return void
+	 * @example ./cli_dispatch.phpsh coreapi cache:clearallcaches
 	 */
 	public function cacheClearallcachesCommand(){
 		
@@ -177,6 +182,7 @@ Currently the following commands are supported:
 	 * Deletes the temp_CACHED_* files in /typo3conf
 	 *
 	 * @return void
+	 * @example ./cli_dispatch.phpsh coreapi cache:clearconfigurationcache
 	 */
 	public function cacheClearconfigurationcacheCommand(){
 
@@ -194,6 +200,7 @@ Currently the following commands are supported:
 	 * Clears the page cache in TYPO3
 	 *
 	 * @return void
+	 * @example ./cli_dispatch.phpsh coreapi cache:clearpagecache
 	 */
 	public function cacheClearpagecacheCommand(){
 
@@ -213,7 +220,7 @@ Currently the following commands are supported:
 	 *
 	 * @param string $actions List of actions which will be executed
 	 * @return void
-	 * @example ./cli_dispatch.phpsh coreapi database:databasecompare 1
+	 * @example ./cli_dispatch.phpsh coreapi database:databasecompare 2
 	 */
 	public function databaseDatabasecompareCommand($actions){
 			
@@ -295,6 +302,7 @@ Currently the following commands are supported:
 	 * Update the list of available extensions in the TER
 	 *
 	 * @return void
+	 * @example ./cli_dispatch.phpsh coreapi extension:updatelist
 	 */
 	public function extensionUpdatelistCommand(){
 		
@@ -309,6 +317,7 @@ Currently the following commands are supported:
 	 *
 	 * @param string $type Extension type, can either be L for local, S for system or G for global. Leave it empty for all
 	 * @return void
+	 * @example ./cli_dispatch.phpsh coreapi extension:listinstalled --type=S
 	 */
 	public function extensionListinstalledCommand($type=''){
 
@@ -331,6 +340,7 @@ Currently the following commands are supported:
 	 * Basic information about the system
 	 *
 	 * @return void
+	 * @example ./cli_dispatch.phpsh coreapi site:info
 	 */
 	public function siteInfoCommand(){
 		
@@ -349,6 +359,7 @@ Currently the following commands are supported:
 	 * @param string $header Header text
 	 * @param string $text Basic text
 	 * @return void
+	 * @example ./cli_dispatch.phpsh coreapi site:createsysnews "The header" "The news text"
 	 */
 	public function siteCreatesysnewsCommand($header, $text){
 
@@ -423,7 +434,7 @@ Currently the following commands are supported:
 			$class = new ReflectionClass(get_class($this));
 			$commands = array();
 			foreach($class->getMethods(ReflectionMethod::IS_PUBLIC) as $method){
-				if(preg_match('/([a-z][a-z0-9]*)([A-Z][a-zA-Z0-9]*)Command/',$method->getName(),$matches)){
+				if(preg_match($this->commandMethodPattern,$method->getName(),$matches)){
 					$commands[] = strtolower($matches[1]) . ':' . strtolower($matches[2]);
 				}								
 			}
@@ -444,7 +455,6 @@ Currently the following commands are supported:
 		$commandmethod = strtolower($service).ucfirst($command).'Command';
 		
 		if(method_exists($this, $commandmethod)){
-			
 			
 			$this->cli_help['options'] = '';
 			
