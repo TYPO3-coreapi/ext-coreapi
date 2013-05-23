@@ -334,6 +334,148 @@ Currently the following commands are supported:
 		
 	}
 	
+	
+	
+	/**
+	 * Install(activate) an extension
+	 *
+	 * @param string $key extension key
+	 * @return void
+	 */
+	public function extensionInstallCommand($key) {
+		
+		$service = t3lib_div::makeInstance('Tx_Coreapi_Service_ExtensionApiService');
+		$data = $service->installExtension($key);
+		$this->outputLine(sprintf('Extension "%s" is now installed!', $key));
+		
+	}
+	
+	
+	/**
+	 * UnInstall(deactivate) an extension
+	 *
+	 * @param string $key extension key
+	 * @return void
+	 */
+	public function extensionUninstallCommand($key) {
+		
+		$service = t3lib_div::makeInstance('Tx_Coreapi_Service_ExtensionApiService');
+		$data = $service->unInstallExtension($key);
+		$this->outputLine(sprintf('Extension "%s" is now uninstalled!', $key));
+		
+	}
+	
+	
+	
+	/**
+	 * Configure an extension
+	 * 
+	 * This command enables you to configure an extension.
+	 * 
+	 * examples:
+	 * 
+	 * [1] Using a standard formatted ini-file
+	 * ./cli_dispatch.phpsh coreapi extension:configure rtehtmlarea --configfile=C:\rteconf.txt 
+	 * 
+	 * [2] Adding configuration settings directly on the command line
+	 * ./cli_dispatch.phpsh coreapi extension:configure rtehtmlarea --settings="enableImages=1;allowStyleAttribute=0"
+	 *
+	 * [3] A combination of [1] and [2]
+	 * ./cli_dispatch.phpsh extbase extension:configure rtehtmlarea --configfile=C:\rteconf.txt --settings="enableImages=1;allowStyleAttribute=0"
+	 * 
+	 * 
+	 *  
+	 * @param string $key extension key
+	 * @param string $configfile path to file containing configuration settings. Must be formatted as a standard ini-file
+	 * @param string $settings string containing configuration settings separated on the form "k1=v1;k2=v2;"
+	 * @return void
+	 */
+	public function extensionConfigureCommand($key, $configfile='',$settings='') {
+		
+		global $TYPO3_CONF_VARS;
+		
+			
+		$service = t3lib_div::makeInstance('Tx_Coreapi_Service_ExtensionApiService');
+			
+		$conf = array();
+			
+		if(is_file($configfile)){
+					
+			$conf = parse_ini_file($configfile);
+				
+		}
+			
+		if(strlen($settings)){
+			$arr = explode(';',$settings);
+			foreach($arr as $v){
+				if(strpos($v,'=') === FALSE){
+					
+					throw new InvalidArgumentException(sprintf('Ill-formed setting "%s"!', $v));
+					
+				}
+				$parts = t3lib_div::trimExplode('=', $v,FALSE,2);
+				
+				if(!empty($parts[0])){
+					$conf[$parts[0]] = $parts[1];
+				}
+			}
+		}
+		
+		if(empty($conf)){
+			
+			throw new InvalidArgumentException(sprintf('No configuration settings!', $key));
+			
+		}
+		
+		$data = $service->configureExtension($key,$conf);
+			
+		
+		$this->outputLine(sprintf('Extension "%s" has been configured!', $key));
+		
+	}
+	
+	
+	
+	/**
+	 * Fetch an extension from TER
+	 * 
+	 * @param string $key extension key
+	 * @param string $version the exact version of the extension, otherwise the latest will be picked
+	 * @param string $location where to put the extension. S = typo3/sysext, G = typo3/ext, L = typo3conf/ext
+	 * @param string $overwrite overwrite the extension if it already exists
+	 * @param string $mirror mirror to fetch the extension from, otherwise a random mirror will be selected
+	 * @return void
+	 */
+
+	public function extensionFetchCommand($key, $version='', $location='L', $overwrite = FALSE, $mirror = ''){
+
+		$service = t3lib_div::makeInstance('Tx_Coreapi_Service_ExtensionApiService');
+		$data = $service->fetchExtension($key, $version, $location, $overwrite,$mirror);
+		$this->outputLine(sprintf('Extension "%s" version %s has been fetched from repository!', $data['extKey'],$data['version']));
+			
+	}
+	
+	
+	
+	/**
+	 * Import extension from file
+	 * 
+	 * @param string $file path to t3x file
+	 * @param string $location where to import the extension. S = typo3/sysext, G = typo3/ext, L = typo3conf/ext
+	 * @param boolean $overwrite overwrite the extension if it already exists
+	 * @return void
+	 */
+
+	public function extensionImportCommand($file, $location='L', $overwrite = FALSE){
+
+		$service = t3lib_div::makeInstance('Tx_Coreapi_Service_ExtensionApiService');
+		$data = $service->importExtension($file,$location,$overwrite);
+		$this->outputLine(sprintf('Extension "%s" has been imported!', $data['extKey']));
+			
+	}
+	
+	
+	
 	/**
 	 * Site info
 	 *
