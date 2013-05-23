@@ -59,7 +59,7 @@ class Tx_Coreapi_Service_ExtensionApiService {
 		include_once(t3lib_extMgm::extPath($key) . 'ext_emconf.php');
 		$information = array(
 			'em_conf' => $EM_CONF[''],
-			'isLoaded' => t3lib_extMgm::isLoaded($key)
+			'is_installed' => t3lib_extMgm::isLoaded($key)
 		);
 
 		return $information;
@@ -159,7 +159,7 @@ class Tx_Coreapi_Service_ExtensionApiService {
 
 		$cacheApiService = t3lib_div::makeInstance('Tx_Coreapi_Service_CacheApiService');
 		$cacheApiService->initializeObject();
-		$cacheApiService->clearAllCaches();		
+		$cacheApiService->clearAllCaches();
 		
 	}
 
