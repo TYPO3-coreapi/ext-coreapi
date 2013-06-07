@@ -128,6 +128,25 @@ class Tx_Coreapi_Command_ExtensionApiCommandController extends Tx_Extbase_MVC_Co
 		$this->outputLine('Extension list has been updated.');
 	}
 
+	/**
+	 * createUploadFoldersCommand
+	 *
+	 * @return void
+	 */
+	public function createUploadFoldersCommand() {
+		/** @var $service Tx_Coreapi_Service_ExtensionApiService */
+		$service = $this->objectManager->get('Tx_Coreapi_Service_ExtensionApiService');
+		$messages = $service->createUploadFolders();
+
+		if (sizeof($messages)) {
+			foreach ($messages as $message) {
+				$this->outputLine($message);
+			}
+		} else {
+			$this->outputLine('no uploadFolder created');
+		}
+	}
+
 }
 
 ?>

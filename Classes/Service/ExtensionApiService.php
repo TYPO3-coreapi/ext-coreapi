@@ -98,6 +98,45 @@ class Tx_Coreapi_Service_ExtensionApiService {
 		$emTask = t3lib_div::makeInstance('tx_em_Tasks_UpdateExtensionList');
 		$emTask->execute();
 	}
+
+	/**
+	 * createUploadFolders
+	 *
+	 * @return array
+	 */
+	public function createUploadFolders() {
+		$extensions = $this->getInstalledExtensions();
+
+			// 6.0 creates also Dirs
+		if (class_exists('\TYPO3\CMS\Extensionmanager\Utility\FileHandlingUtility')) {
+			$fileHandlingUtility = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\CMS\Extensionmanager\Utility\FileHandlingUtility');
+			foreach ($extensions AS $key => $extension) {
+				$extension['key'] = $key;
+				$fileHandlingUtility->ensureConfiguredDirectoriesExist($extension);
+			}
+			return array('done with \TYPO3\CMS\Extensionmanager\Utility\FileHandlingUtility->ensureConfiguredDirectoriesExist');
+		}
+
+			// < 6.0 creates no Dirs
+		$messages = array();
+
+		foreach ($extensions as $extKey => $extInfo) {
+			$uploadFolder = PATH_site . tx_em_Tools::uploadFolder($extKey);
+			if ($extInfo['uploadfolder'] && ! @is_dir($uploadFolder)) {
+				t3lib_div::mkdir($uploadFolder);
+				$messages[] = 'mkdir ' . $uploadFolder;
+				$indexContent = '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+					<HTML>
+					<HEAD>
+					<TITLE></TITLE>
+					<META http-equiv=Refresh Content="0; Url=../../">
+					</HEAD>
+					</HTML>';
+				t3lib_div::writeFile($uploadFolder . 'index.html', $indexContent);
+			}
+		}
+		return $messages;
+	}
 }
 
 ?>
