@@ -186,6 +186,16 @@ class Tx_Coreapi_Cli_Dispatcher {
 			case 'updatelist':
 				$extensionApiService->updateMirrors();
 				break;
+			case 'createuploadfolders' :
+				$messages = $extensionApiService->createUploadFolders();
+				if (sizeof($messages)) {
+					foreach ($messages as $message) {
+						$this->outputLine($message);
+					}
+				} else {
+					$this->outputLine('no uploadFolder created');
+				}
+				break;
 			case 'listinstalled':
 				$extensions = $extensionApiService->getInstalledExtensions($_SERVER['argv'][2]);
 				$out = array();
