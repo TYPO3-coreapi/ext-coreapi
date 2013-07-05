@@ -64,6 +64,7 @@ class Tx_Coreapi_Service_SiteApiService {
 			'content' => $text,
 			'tstamp' => $GLOBALS['EXEC_TIME'],
 			'crdate' => $GLOBALS['EXEC_TIME'],
+			'cruser_id' => $GLOBALS['BE_USER']->user['uid']
 		));
 	}
 
