@@ -183,19 +183,21 @@ class Tx_Coreapi_Service_DatabaseApiService {
 
 		foreach ($updateActions as $updateAction) {
 			if (isset($update[$updateAction]) && is_array($update[$updateAction])) {
-				$tmpKeys += array_keys($update[$updateAction]);
+				$tmpKeys[] = array_keys($update[$updateAction]);
 			}
 		}
 
 		foreach ($removeActions as $removeAction) {
 			if (isset($remove[$removeAction]) && is_array($remove[$removeAction])) {
-				$tmpKeys += array_keys($remove[$removeAction]);
+				$tmpKeys[] = array_keys($remove[$removeAction]);
 			}
 		}
 
 		$finalKeys = array();
-		foreach ($tmpKeys as $key) {
-			$finalKeys[$key] = TRUE;
+		foreach ($tmpKeys as $keys) {
+			foreach ($keys as $key) {
+				$finalKeys[$key] = TRUE;
+			}
 		}
 		return $finalKeys;
 	}
