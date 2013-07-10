@@ -29,46 +29,42 @@
  * @subpackage tx_coreapi
  */
 class Tx_Coreapi_Service_ExtensionApiService {
-/*
-	extension                   Provides some basic information on the site's extension status
-	[x] extension:info              Fetches the latest (or provided) version of an extension from TER
-	[x] extension:list              Lists all available extensions of a site
-	extension:search            Searches for an extension in the TER
-	extension:fetch             Fetches the latest (or provided) version of an extension from TER
-	extension:install           Installs the latest (or provided) version of an extension
-	extension:uninstall         Uninstalls an extension
-	extension:refresh           Refreshes the local cache of all extensions available in TER
-*/
-
 
 	/**
 	 * Get information about an extension
 	 *
-	 * @param string $key extension key
+	 * @param string $extensionKey extension key
 	 * @return array
 	 * @throws InvalidArgumentException
 	 */
-	public function getExtensionInformation($key) {
-		if (strlen($key) === 0) {
+	public function getExtensionInformation($extensionKey) {
+		if (strlen($extensionKey) === 0) {
 			throw new InvalidArgumentException('No extension key given!');
 		}
-		if (!$GLOBALS['TYPO3_LOADED_EXT'][$key]) {
-			throw new InvalidArgumentException(sprintf('Extension "%s" not found!', $key));
+		if (!$GLOBALS['TYPO3_LOADED_EXT'][$extensionKey]) {
+			throw new InvalidArgumentException(sprintf('Extension "%s" not found!', $extensionKey));
 		}
 
-		include_once(t3lib_extMgm::extPath($key) . 'ext_emconf.php');
+		include_once(t3lib_extMgm::extPath($extensionKey) . 'ext_emconf.php');
 		$information = array(
 			'em_conf' => $EM_CONF[''],
-			'is_installed' => t3lib_extMgm::isLoaded($key)
+			'is_installed' => t3lib_extMgm::isLoaded($extensionKey)
 		);
 
 		return $information;
 	}
 
+	/**
+	 * Get array of installed extensions
+	 *
+	 * @param string $type L, S, G or empty (for all)
+	 * @return array
+	 * @throws InvalidArgumentException
+	 */
 	public function getInstalledExtensions($type = '') {
 		$type = strtoupper($type);
 		if (!empty($type) && $type !== 'L' && $type !== 'G' && $type !== 'S') {
-			throw new InvalidArgumentException('Only "L", "S" and "G" are supported as type (or nothing)');
+			throw new InvalidArgumentException('Only "L", "S", "G" and "" (all) are supported as type');
 		}
 
 		$extensions = $GLOBALS['TYPO3_LOADED_EXT'];
@@ -84,7 +80,6 @@ class Tx_Coreapi_Service_ExtensionApiService {
 		}
 
 		ksort($list);
-
 		return $list;
 	}
 
@@ -108,7 +103,7 @@ class Tx_Coreapi_Service_ExtensionApiService {
 	public function createUploadFolders() {
 		$extensions = $this->getInstalledExtensions();
 
-			// 6.0 creates also Dirs
+		// 6.0 creates also Dirs
 		if (class_exists('\TYPO3\CMS\Extensionmanager\Utility\FileHandlingUtility')) {
 			$fileHandlingUtility = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\CMS\Extensionmanager\Utility\FileHandlingUtility');
 			foreach ($extensions AS $key => $extension) {
@@ -118,12 +113,11 @@ class Tx_Coreapi_Service_ExtensionApiService {
 			return array('done with \TYPO3\CMS\Extensionmanager\Utility\FileHandlingUtility->ensureConfiguredDirectoriesExist');
 		}
 
-			// < 6.0 creates no Dirs
+		// < 6.0 creates no Dirs
 		$messages = array();
-
 		foreach ($extensions as $extKey => $extInfo) {
 			$uploadFolder = PATH_site . tx_em_Tools::uploadFolder($extKey);
-			if ($extInfo['uploadfolder'] && ! @is_dir($uploadFolder)) {
+			if ($extInfo['uploadfolder'] && !@is_dir($uploadFolder)) {
 				t3lib_div::mkdir($uploadFolder);
 				$messages[] = 'mkdir ' . $uploadFolder;
 				$indexContent = '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
@@ -142,514 +136,418 @@ class Tx_Coreapi_Service_ExtensionApiService {
 
 	/**
 	 * Install (load) an extension
-	 * 
-	 * @param string $key extension key
+	 *
+	 * @param string $extensionKey extension key
 	 * @return void
+	 * @throws RuntimeException
+	 * @throws InvalidArgumentException
 	 */
-	public function installExtension($key){
-
-		if(t3lib_div::compat_version('6.0.0')){
-			
+	public function installExtension($extensionKey) {
+		if (t3lib_div::compat_version('6.0.0')) {
 			throw new RuntimeException('This feature is not available in TYPO3 versions > 4.7 (yet)!');
-			
-		}
-		
-		// checks if extension exists		
-		if (!$this->exist($key)) {
-			
-			throw new InvalidArgumentException(sprintf('Extension "%s" does not exist!', $key));
-			
 		}
 
-		//check if extension is already loaded
-		if (t3lib_extMgm::isLoaded($key)) {
-			
-			throw new InvalidArgumentException(sprintf('Extension "%s" already installed!', $key));
-			
+		// checks if extension exists
+		if (!$this->extensionExists($extensionKey)) {
+			throw new InvalidArgumentException(sprintf('Extension "%s" does not exist!', $extensionKey));
 		}
-		
-		//check if localconf.php is writable
+
+		// check if extension is already loaded
+		if (t3lib_extMgm::isLoaded($extensionKey)) {
+			throw new InvalidArgumentException(sprintf('Extension "%s" already installed!', $extensionKey));
+		}
+
+		// check if localconf.php is writable
 		if (!t3lib_extMgm::isLocalconfWritable()) {
-
 			throw new RuntimeException('Localconf.php is not writeable!');
-			
 		}
-		
-		//add extension to list of loaded extensions
-		$newlist = $this->extensionList->addExtToList($key, $list);	
-		if ($newlist === -1) {
 
-			throw new RuntimeException(sprintf('Extension "%s" could not be installed!', $key));
+		$extensionList = $this->getExtensionList();
+		list($currentList,) = $extensionList->getInstalledExtensions();
 
+		// add extension to list of loaded extensions
+		$newList = $extensionList->addExtToList($extensionKey, $currentList);
+		if ($newList === -1) {
+			throw new RuntimeException(sprintf('Extension "%s" could not be installed!', $extensionKey));
 		}
-		
-		//update typo3conf/localconf.php
-		$this->extensionList = t3lib_div::makeInstance('tx_em_Extensions_List', $this);
-		
-		$install = t3lib_div::makeInstance('tx_em_Install', $this);
+
+		// update typo3conf/localconf.php
+		$install = $this->getEmInstall();
 		$install->setSilentMode(TRUE);
-		$install->writeNewExtensionList($newlist);
+		$install->writeNewExtensionList($newList);
 
-		tx_em_Tools::refreshGlobalExtList();		
-		
-		//make database changes
-		$install->forceDBupdates($key, $list[$key]);
+		tx_em_Tools::refreshGlobalExtList();
 
-		$cacheApiService = t3lib_div::makeInstance('Tx_Coreapi_Service_CacheApiService');
-		$cacheApiService->initializeObject();
-		$cacheApiService->clearAllCaches();
-		
+		// make database changes
+		// TODO make this optional
+		$install->forceDBupdates($extensionKey, $newList[$extensionKey]);
+
+		// TODO make this optional
+		$this->clearCaches();
 	}
-
 
 	/**
 	 * Uninstall (unload) an extension
-	 * 
-	 * @param string $key extension key
+	 *
+	 * @param string $extensionKey extension key
 	 * @return void
+	 * @throws RuntimeException
+	 * @throws InvalidArgumentException
 	 */
-	public function unInstallExtension($key){
-		
-		if(t3lib_div::compat_version('6.0.0')){
-			
+	public function uninstallExtension($extensionKey) {
+		if (t3lib_div::compat_version('6.0.0')) {
 			throw new RuntimeException('This feature is not available in TYPO3 versions > 4.7 (yet)!');
-			
 		}
-		
-		//check if extension is this extension (coreapi)
-		if ($key == 'coreapi') {
-			
-			throw new InvalidArgumentException(sprintf('Extension "%s" cannot be uninstalled!', $key));
-		
-		}
-		
-		
-		// checks if extension exists		
-		if (!$this->exist($key)) {
-			
-			throw new InvalidArgumentException(sprintf('Extension "%s" does not exist!', $key));
-			
-		}
-		
-		//check if extension is loaded
-		if (!t3lib_extMgm::isLoaded($key)) {
 
-			throw new InvalidArgumentException(sprintf('Extension "%s" is not installed!', $key));
-
+		// check if extension is this extension (coreapi)
+		if ($extensionKey == 'coreapi') {
+			throw new InvalidArgumentException(sprintf('Extension "%s" cannot be uninstalled!', $extensionKey));
 		}
-		
-		
-		//check if this is a required extension (such as "cms") that cannot be uninstalled
-		$requiredExtList = t3lib_div::trimExplode(',',t3lib_extMgm::getRequiredExtensionList());
-		if (in_array($key, $requiredExtList)) {		
 
-			throw new InvalidArgumentException(sprintf('Extension "%s" is a required extension and cannot be uninstalled!', $key));
-		
+		// checks if extension exists
+		if (!$this->extensionExists($extensionKey)) {
+			throw new InvalidArgumentException(sprintf('Extension "%s" does not exist!', $extensionKey));
 		}
-		
-		
 
-		//check if localconf.php is writable
+		// check if extension is loaded
+		if (!t3lib_extMgm::isLoaded($extensionKey)) {
+			throw new InvalidArgumentException(sprintf('Extension "%s" is not installed!', $extensionKey));
+		}
+
+		// check if this is a required extension (such as "cms") that cannot be uninstalled
+		$requiredExtList = t3lib_div::trimExplode(',', t3lib_extMgm::getRequiredExtensionList());
+		if (in_array($extensionKey, $requiredExtList)) {
+			throw new InvalidArgumentException(sprintf('Extension "%s" is a required extension and cannot be uninstalled!', $extensionKey));
+		}
+
+		// check if localconf.php is writable
 		if (!t3lib_extMgm::isLocalconfWritable()) {
-
 			throw new RuntimeException('Localconf.php is not writeable!');
-			
 		}
-		
-		$newlist = $this->extensionList->removeExtFromList($key, $list);	
-		if ($newlist === -1) {
 
-			throw new RuntimeException(sprintf('Extension "%s" could not be installed!', $key));
-
+		$extensionList = $this->getExtensionList();
+		list($currentList,) = $extensionList->getInstalledExtensions();
+		$newList = $extensionList->removeExtFromList($extensionKey, $currentList);
+		if ($newList === -1) {
+			throw new RuntimeException(sprintf('Extension "%s" could not be installed!', $extensionKey));
 		}
-		
-		//update typo3conf/localconf.php
-		$this->extensionList = t3lib_div::makeInstance('tx_em_Extensions_List', $this);
 
-		$install = t3lib_div::makeInstance('tx_em_Install', $this);
+		// update typo3conf/localconf.php
+		$install = $this->getEmInstall();
 		$install->setSilentMode(TRUE);
-		$install->writeNewExtensionList($newlist);
-		
-		tx_em_Tools::refreshGlobalExtList();		
-		
-		$cacheApiService = t3lib_div::makeInstance('Tx_Coreapi_Service_CacheApiService');
-		$cacheApiService->initializeObject();
-		$cacheApiService->clearAllCaches();		
+		$install->writeNewExtensionList($newList);
+
+		tx_em_Tools::refreshGlobalExtList();
+
+		// TODO make this optional
+		$this->clearCaches();
 	}
 
 	/**
 	 * Configure an extension
-	 * 
-	 * @param string $key extension key
+	 *
+	 * @param string $extensionKey extension key
+	 * @param array $extensionConfiguration
 	 * @return void
+	 * @throws RuntimeException
+	 * @throws InvalidArgumentException
 	 */
-	public function configureExtension($key,$conf = array()){
-		
+	public function configureExtension($extensionKey, $extensionConfiguration = array()) {
 		global $TYPO3_CONF_VARS;
-		
-		if(t3lib_div::compat_version('6.0.0')){
-			
+
+		if (t3lib_div::compat_version('6.0.0')) {
 			throw new RuntimeException('This feature is not available in TYPO3 versions > 4.7 (yet)!');
-			
 		}
-		
-		//check if extension exists
-		if (!$this->exist($key)) {
-			
-			throw new InvalidArgumentException(sprintf('Extension "%s" does not exist!', $key));
-			
+
+		// check if extension exists
+		if (!$this->extensionExists($extensionKey)) {
+			throw new InvalidArgumentException(sprintf('Extension "%s" does not exist!', $extensionKey));
 		}
-		
-		//check if extension is loaded
-		if (!t3lib_extMgm::isLoaded($key)) {
 
-			throw new InvalidArgumentException(sprintf('Extension "%s" is not installed!', $key));
-
+		// check if extension is loaded
+		if (!t3lib_extMgm::isLoaded($extensionKey)) {
+			throw new InvalidArgumentException(sprintf('Extension "%s" is not installed!', $extensionKey));
 		}
 
 		// check if extension can be configured
-		$extAbsPath = t3lib_extMgm::extPath($key);
-				
-		$extconftemplatefile = $extAbsPath.'ext_conf_template.txt';
-		if(!file_exists($extconftemplatefile)){
+		$extAbsPath = t3lib_extMgm::extPath($extensionKey);
 
-			throw new InvalidArgumentException(sprintf('Extension "%s" has no configuration options!', $key));
-			
+		$extConfTemplateFile = $extAbsPath . 'ext_conf_template.txt';
+		if (!file_exists($extConfTemplateFile)) {
+			throw new InvalidArgumentException(sprintf('Extension "%s" has no configuration options!', $extensionKey));
 		}
-		
-		//checks if conf array is empty
-		if(empty($conf)){
-			
-			throw new InvalidArgumentException(sprintf('No configuration for extension "%s"!', $key));
-			
+
+		// checks if conf array is empty
+		if (empty($extensionConfiguration)) {
+			throw new InvalidArgumentException(sprintf('No configuration for extension "%s"!', $extensionKey));
 		}
-		
+
 		// Load tsStyleConfig class and parse configuration template:
-		$extRelPath = t3lib_extmgm::extRelPath($key);
-		
+		$extRelPath = t3lib_extmgm::extRelPath($extensionKey);
+
 		$tsStyleConfig = t3lib_div::makeInstance('t3lib_tsStyleConfig');
 		$tsStyleConfig->doNotSortCategoriesBeforeMakingForm = TRUE;
 		$constants = $tsStyleConfig->ext_initTSstyleConfig(
-			t3lib_div::getUrl($extconftemplatefile),
+			t3lib_div::getUrl($extConfTemplateFile),
 			$extRelPath,
 			$extAbsPath,
 			$GLOBALS['BACK_PATH']
 		);
-		
 
-		//check for unknow configuration settings		
-		foreach($conf as $k => $v){
-			
-			if(!isset($constants[$k])){
-
-				throw new InvalidArgumentException(sprintf('No configuration setting with name "%s" for extension "%s"!', $k, $key));
-				
+		// check for unknown configuration settings
+		foreach ($extensionConfiguration as $key => $value) {
+			if (!isset($constants[$key])) {
+				throw new InvalidArgumentException(sprintf('No configuration setting with name "%s" for extension "%s"!', $key, $extensionKey));
 			}
-						
 		}
-		
 
 		// get existing configuration
-		$arr = unserialize($TYPO3_CONF_VARS['EXT']['extConf'][$key]);
-		$arr = is_array($arr) ? $arr : array();
-		
-		
-		//fill with missing values
-		foreach(array_keys($constants) as $k){
-			if(!isset($conf[$k])){
-				
-				if(isset($arr[$k])){
-			
-					$conf[$k] = $arr[$k]; 
-			
+		$configurationArray = unserialize($TYPO3_CONF_VARS['EXT']['extConf'][$extensionKey]);
+		$configurationArray = is_array($configurationArray) ? $configurationArray : array();
+
+		// fill with missing values
+		foreach (array_keys($constants) as $key) {
+			if (!isset($extensionConfiguration[$key])) {
+				if (isset($configurationArray[$key])) {
+					$extensionConfiguration[$key] = $configurationArray[$key];
 				} else {
-				
-					if(!empty($constants[$k]['value'])){
-						$conf[$k] = $constants[$k]['value'];
+					if (!empty($constants[$key]['value'])) {
+						$extensionConfiguration[$key] = $constants[$key]['value'];
 					} else {
-						$conf[$k] = $constants[$k]['default_value'];
+						$extensionConfiguration[$key] = $constants[$key]['default_value'];
 					}
-					
 				}
 			}
 		}
-			
+
 		// process incoming configuration
 		// values are checked against types in $constants
-		$tsStyleConfig->ext_procesInput(array('data'=>$conf), array(), $constants, array());
-		
+		$tsStyleConfig->ext_procesInput(array('data' => $extensionConfiguration), array(), $constants, array());
+
 		// current configuration is merged with incoming configuration
-		$arr = $tsStyleConfig->ext_mergeIncomingWithExisting($arr);
-			
+		$configurationArray = $tsStyleConfig->ext_mergeIncomingWithExisting($configurationArray);
+
 		// write configuration to typo3conf/localconf.php
-		$install = t3lib_div::makeInstance('tx_em_Install', $this);
+		$install = $this->getEmInstall();
 		$install->setSilentMode(TRUE);
-		$install->writeTsStyleConfig($key,$arr);
-		
-		$cacheApiService = t3lib_div::makeInstance('Tx_Coreapi_Service_CacheApiService');
-		$cacheApiService->initializeObject();
-		$cacheApiService->clearAllCaches();		
-		
+		$install->writeTsStyleConfig($extensionKey, $configurationArray);
+
+		// TODO make this optional
+		$this->clearCaches();
 	}
 
-
-
 	/**
-	 * Fetch an extension from repos
-	 * 
-	 * @param string $key extension key
-	 * @return void
+	 * Fetch an extension from TER
+	 *
+	 * @param $extensionKey
+	 * @param string $version
+	 * @param string $location
+	 * @param bool $overwrite
+	 * @param string $mirror
+	 * @return array
+	 * @throws RuntimeException
+	 * @throws InvalidArgumentException
 	 */
-	public function fetchExtension($key, $version='', $location='L', $overwrite = FALSE, $mirror = ''){
-		
+	public function fetchExtension($extensionKey, $version = '', $location = 'L', $overwrite = FALSE, $mirror = '') {
 		$return = array();
-		
-		if(!tx_em_Tools::importAsType($location)){
-			
-			if($location === 'G'){
-				throw new InvalidArgumentException(sprintf('Global installation (%s) is not allowed!',$location));
+		if (!tx_em_Tools::importAsType($location)) {
+			if ($location === 'G') {
+				throw new InvalidArgumentException(sprintf('Global installation (%s) is not allowed!', $location));
 			}
-
-			if($location === 'L'){
-				throw new InvalidArgumentException(sprintf('Local installation (%s) is not allowed!',$location));
+			if ($location === 'L') {
+				throw new InvalidArgumentException(sprintf('Local installation (%s) is not allowed!', $location));
 			}
-
-			if($location === 'S'){
-				throw new InvalidArgumentException(sprintf('System installation (%s) is not allowed!',$location));
+			if ($location === 'S') {
+				throw new InvalidArgumentException(sprintf('System installation (%s) is not allowed!', $location));
 			}
-			
-			throw new InvalidArgumentException(sprintf('Unknown location "%s"!',$location));
-
-		}		
+			throw new InvalidArgumentException(sprintf('Unknown location "%s"!', $location));
+		}
 
 		if (!$overwrite) {
-			$location = ($location==='G' || $location==='S') ? $location : 'L';
-			$comingExtPath = tx_em_Tools::typePath($location) . $key . '/';
+			$location = ($location === 'G' || $location === 'S') ? $location : 'L';
+			$comingExtPath = tx_em_Tools::typePath($location) . $extensionKey . '/';
 			if (@is_dir($comingExtPath)) {
-
-				throw new InvalidArgumentException(sprintf('Extension "%s" already exists at "%s"!',$key,$comingExtPath));
-
-			} 
+				throw new InvalidArgumentException(sprintf('Extension "%s" already exists at "%s"!', $extensionKey, $comingExtPath));
+			}
 		}
 
-		//some dependencies
-		$this->xmlHandler = t3lib_div::makeInstance('tx_em_Tools_XmlHandler');
-		$this->extensionList = t3lib_div::makeInstance('tx_em_Extensions_List', $this);
-		$this->terConnection = t3lib_div::makeInstance('tx_em_Connection_Ter', $this);
-		$this->extensionDetails = t3lib_div::makeInstance('tx_em_Extensions_Details', $this);
+		$xmlHandler = t3lib_div::makeInstance('tx_em_Tools_XmlHandler');
 
-		//check extension list
-		$this->xmlHandler->searchExtensionsXMLExact($key, '', '', TRUE, TRUE);
-		if(!isset($this->xmlHandler->extensionsXML[$key])){
-			
-			throw new InvalidArgumentException(sprintf('Extension "%s" was not found',$key));
-
+		// check extension list
+		$xmlHandler->searchExtensionsXMLExact($extensionKey, '', '', TRUE, TRUE);
+		if (!isset($xmlHandler->extensionsXML[$extensionKey])) {
+			throw new InvalidArgumentException(sprintf('Extension "%s" was not found', $extensionKey));
 		}
 
-		//get latest version
+		// get latest version
 		if (!strlen($version)) {
-			$versions = array_keys($this->xmlHandler->extensionsXML[$key]['versions']);
-				// sort version numbers ascending to pick the highest version
+			$versions = array_keys($xmlHandler->extensionsXML[$extensionKey]['versions']);
+			// sort version numbers ascending to pick the highest version
 			natsort($versions);
 			$version = end($versions);
 		}
-		
-		//check if version exists
-		if(!isset($this->xmlHandler->extensionsXML[$key]['versions'][$version])){
-			
-			throw new InvalidArgumentException(sprintf('Version %s of extension "%s" does not exist',$version,$key));
-			
+
+		// check if version exists
+		if (!isset($xmlHandler->extensionsXML[$extensionKey]['versions'][$version])) {
+			throw new InvalidArgumentException(sprintf('Version %s of extension "%s" does not exist', $version, $extensionKey));
 		}
 
-		//get mirrors
+		// get mirrors
 		$mirrors = array();
-		
-		$mfile = t3lib_div::tempnam('mirrors');
+		$mirrorsTmpFile = t3lib_div::tempnam('mirrors');
 		$mirrorsFile = t3lib_div::getUrl($GLOBALS['TYPO3_CONF_VARS']['EXT']['em_mirrorListURL'], 0);
-		
-		if ($mirrorsFile===FALSE) {
-			
-			t3lib_div::unlink_tempfile($mfile);
-			
+
+		if ($mirrorsFile === FALSE) {
+			t3lib_div::unlink_tempfile($mirrorsTmpFile);
 			throw new RuntimeException('Could not retrieve the list of mirrors!');
-			
 		} else {
-			
-			t3lib_div::writeFile($mfile, $mirrorsFile);
-			$mirrors = implode('', gzfile($mfile));
-			t3lib_div::unlink_tempfile($mfile);
-			$mirrors = $this->xmlHandler->parseMirrorsXML($mirrors);
-			
+			t3lib_div::writeFile($mirrorsTmpFile, $mirrorsFile);
+			$mirrorsXml = implode('', gzfile($mirrorsTmpFile));
+			t3lib_div::unlink_tempfile($mirrorsTmpFile);
+			$mirrors = $xmlHandler->parseMirrorsXML($mirrorsXml);
 		}
-		
+
 		if ((!is_array($mirrors)) || (count($mirrors) < 1)) {
-				
-				throw new RuntimeException('No mirrors found!');
-				
+			throw new RuntimeException('No mirrors found!');
 		}
-		
-		
-		$mirrorurl = '';
-		
+
+		$mirrorUrl = '';
 		if (!strlen($mirror)) {
-				
 			$rand = array_rand($mirrors);
-			$mirrorurl = 'http://' . $mirrors[$rand]['host'] . $mirrors[$rand]['path'];
-
-		} elseif(isset($mirrors[$mirror])){
-			
-			$mirrorurl = 'http://' . $mirrors[$mirror]['host'] . $mirrors[$mirror]['path'];
-			
+			$mirrorUrl = 'http://' . $mirrors[$rand]['host'] . $mirrors[$rand]['path'];
+		} elseif (isset($mirrors[$mirror])) {
+			$mirrorUrl = 'http://' . $mirrors[$mirror]['host'] . $mirrors[$mirror]['path'];
 		} else {
-			
-			throw new InvalidArgumentException(sprintf('Mirror "%s" does not exist',$mirror));
-			
+			throw new InvalidArgumentException(sprintf('Mirror "%s" does not exist', $mirror));
 		}
 
-		$fetchData = $this->terConnection->fetchExtension($key, $version, $this->xmlHandler->extensionsXML[$key]['versions'][$version]['t3xfilemd5'], $mirrorurl);
-
-		if(!is_array($fetchData)){
-			
+		$terConnection = t3lib_div::makeInstance('tx_em_Connection_Ter', $this);
+		$fetchData = $terConnection->fetchExtension($extensionKey, $version, $xmlHandler->extensionsXML[$extensionKey]['versions'][$version]['t3xfilemd5'], $mirrorUrl);
+		if (!is_array($fetchData)) {
 			throw new RuntimeException($fetchData);
-		
 		}
 
 		$extKey = $fetchData[0]['extKey'];
-		
-		if(!$extKey){
-
+		if (!$extKey) {
 			throw new RuntimeException($fetchData);
-
 		}
 
 		$return['extKey'] = $extKey;
 		$return['version'] = $fetchData[0]['EM_CONF']['version'];
-		
-		$install = t3lib_div::makeInstance('tx_em_Install', $this);
+
+		$install = $this->getEmInstall();
 		$install->setSilentMode(TRUE);
 		$content = $install->installExtension($fetchData, $location, null, '', !$overwrite);
-		
+
 		return $return;
 	}
 
-
-
 	/**
 	 * Imports extension from file
-	 * 
+	 *
 	 * @param string $file path to t3x file
 	 * @param string $location where to import the extension. S = typo3/sysext, G = typo3/ext, L = typo3conf/ext
-	 * @param boolean $overwrite overwrite the extension if it already exists
+	 * @param bool $overwrite overwrite the extension if it already exists
 	 * @return void
+	 * @throws InvalidArgumentException
 	 */
-	public function importExtension($file,$location='L',$overwrite = FALSE){
-		
+	public function importExtension($file, $location = 'L', $overwrite = FALSE) {
 		$return = array();
-
-		if(!is_file($file)){
-			
-			throw new InvalidArgumentException(sprintf('File "%s" does not exist!',$file));
-		
+		if (!is_file($file)) {
+			throw new InvalidArgumentException(sprintf('File "%s" does not exist!', $file));
 		}
-		
-		
-		if(!tx_em_Tools::importAsType($location)){
-			
-			if($location === 'G'){
-				throw new InvalidArgumentException(sprintf('Global installation (%s) is not allowed!',$location));
-			}
 
-			if($location === 'L'){
-				throw new InvalidArgumentException(sprintf('Local installation (%s) is not allowed!',$location));
+		if (!tx_em_Tools::importAsType($location)) {
+			if ($location === 'G') {
+				throw new InvalidArgumentException(sprintf('Global installation (%s) is not allowed!', $location));
 			}
-
-			if($location === 'S'){
-				throw new InvalidArgumentException(sprintf('System installation (%s) is not allowed!',$location));
+			if ($location === 'L') {
+				throw new InvalidArgumentException(sprintf('Local installation (%s) is not allowed!', $location));
 			}
+			if ($location === 'S') {
+				throw new InvalidArgumentException(sprintf('System installation (%s) is not allowed!', $location));
+			}
+			throw new InvalidArgumentException(sprintf('Unknown location "%s"!', $location));
+		}
 
-			throw new InvalidArgumentException(sprintf('Unknown location "%s"!',$location));
-			
-		}		
-		
-		
-		
 		$fileContent = t3lib_div::getUrl($file);
-		
 		if (!$fileContent) {
-
-			throw new InvalidArgumentException(sprintf('File "%s" is empty!',$file));
-			
+			throw new InvalidArgumentException(sprintf('File "%s" is empty!', $file));
 		}
 
-		//some dependencies
-		$this->xmlHandler = t3lib_div::makeInstance('tx_em_Tools_XmlHandler');
-		$this->extensionList = t3lib_div::makeInstance('tx_em_Extensions_List', $this);
-		$this->terConnection = t3lib_div::makeInstance('tx_em_Connection_Ter', $this);
-		$this->extensionDetails = t3lib_div::makeInstance('tx_em_Extensions_Details', $this);
-		
-		$fetchData = $this->terConnection->decodeExchangeData($fileContent);
-		
-		if(!is_array($fetchData)){
-			
-			throw new InvalidArgumentException(sprintf('File "%s" is of a wrong format!',$file));
-		
+		$terConnection = t3lib_div::makeInstance('tx_em_Connection_Ter', $this);
+		$fetchData = $terConnection->decodeExchangeData($fileContent);
+		if (!is_array($fetchData)) {
+			throw new InvalidArgumentException(sprintf('File "%s" is of a wrong format!', $file));
 		}
 
-		$extKey = $fetchData[0]['extKey'];
-		
-		if(!$extKey){
-
-			throw new InvalidArgumentException(sprintf('File "%s" is of a wrong format!',$file));
-			
+		$extensionKey = $fetchData[0]['extKey'];
+		if (!$extensionKey) {
+			throw new InvalidArgumentException(sprintf('File "%s" is of a wrong format!', $file));
 		}
-		
-		$return['extKey'] = $extKey;
+
+		$return['extKey'] = $extensionKey;
 		$return['version'] = $fetchData[0]['EM_CONF']['version'];
-			
+
 		if (!$overwrite) {
-			$location = ($location==='G' || $location==='S') ? $location : 'L';
-			$comingExtPath = tx_em_Tools::typePath($location) . $extKey . '/';
-			if (@is_dir($comingExtPath)) {
+			$location = ($location === 'G' || $location === 'S') ? $location : 'L';
+			$destinationPath = tx_em_Tools::typePath($location) . $extensionKey . '/';
+			if (@is_dir($destinationPath)) {
+				throw new InvalidArgumentException(sprintf('Extension "%s" already exists at "%s"!', $extensionKey, $destinationPath));
+			}
+		}
 
-				throw new InvalidArgumentException(sprintf('Extension "%s" already exists at "%s"!',$extKey,$comingExtPath));
-				
-			} 
-		} 
-
-		$install = t3lib_div::makeInstance('tx_em_Install', $this);
-		$install->setSilentMode(TRUE);
+		$install = $this->getEmInstall();
 		$content = $install->installExtension($fetchData, $location, null, $file, !$overwrite);
-			
+
 		return $return;
 	}
 
 
 	/**
 	 * Check if an extension exists
-	 * 
-	 * @param string $key extension key
+	 *
+	 * @param string $extensionKey extension key
 	 * @return void
 	 */
-	public function exist($key){
+	protected function extensionExists($extensionKey) {
+		$extensionList = $this->getExtensionList();
 
-		if(!is_object($this->extensionList)){
-			$this->extensionList = t3lib_div::makeInstance('tx_em_Extensions_List', $this);
-		}
-
-		list($list,) = $this->extensionList->getInstalledExtensions();
-				
-		$exist = FALSE;
-		foreach ($list as $k => $v) {
-			if ($v['extkey'] === $key) {
-				$exist = TRUE;
+		list($list,) = $extensionList->getInstalledExtensions();
+		$extensionExists = FALSE;
+		foreach ($list as $values) {
+			if ($values['extkey'] === $extensionKey) {
+				$extensionExists = TRUE;
 				break;
 			}
 		}
-
-		return $exist;
+		return $extensionExists;
 	}
-	
 
+	/**
+	 * @return tx_em_Extensions_List
+	 */
+	protected function getExtensionList() {
+		return t3lib_div::makeInstance('tx_em_Extensions_List', $this);
+	}
+
+	/**
+	 * @return tx_em_Install
+	 */
+	protected function getEmInstall() {
+		$install = t3lib_div::makeInstance('tx_em_Install', $this);
+		$install->setSilentMode(TRUE);
+		return $install;
+	}
+
+	/**
+	 * Clear the caches
+	 */
+	protected function clearCaches() {
+		$cacheApiService = t3lib_div::makeInstance('Tx_Coreapi_Service_CacheApiService');
+		$cacheApiService->initializeObject();
+		$cacheApiService->clearAllCaches();
+	}
 }
 
 ?>

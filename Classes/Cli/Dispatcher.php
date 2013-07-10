@@ -304,7 +304,7 @@ Currently the following commands are supported:
 	 */
 	public function extensionUninstallCommand($key) {
 		$extensionApiService = $this->getExtensionApiService();
-		$data = $extensionApiService->unInstallExtension($key);
+		$data = $extensionApiService->uninstallExtension($key);
 		$this->outputLine(sprintf('Extension "%s" is now uninstalled!', $key));
 	}
 
