@@ -479,8 +479,22 @@ Currently the following commands are supported:
 		$this->outputLine(sprintf('Extension "%s" has been imported!', $data['extKey']));
 			
 	}
-	
-	
+
+	/**
+	 * Ensure upload folders of installed extensions exist
+	 * @return void
+	 */
+	public function extensionCreateuploadfolder() {
+		$service = t3lib_div::makeInstance('Tx_Coreapi_Service_ExtensionApiService');
+		$messages = $service->createUploadFolders();
+		if (sizeof($messages)) {
+			foreach ($messages as $message) {
+				$this->outputLine($message);
+			}
+		} else {
+			$this->outputLine('no uploadFolder created');
+		}
+	}
 	
 	/**
 	 * Site info

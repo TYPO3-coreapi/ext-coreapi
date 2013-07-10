@@ -39,8 +39,16 @@ class Tx_Coreapi_Service_CacheApiService {
 	 *
 	 */
 	public function initializeObject() {
+		// Create a fake admin user
+		$adminUser = new t3lib_beUserAuth();
+		$adminUser->user['uid'] = $GLOBALS['BE_USER']->user['uid'];
+		$adminUser->user['username'] = '_CLI_lowlevel';
+		$adminUser->user['admin'] = 1;
+		$adminUser->workspace = 0;
+
 		$this->tce = t3lib_div::makeInstance('t3lib_TCEmain');
 		$this->tce->start(Array(), Array());
+		$this->tce->start(Array(), Array(), $adminUser);
 	}
 
 	/**

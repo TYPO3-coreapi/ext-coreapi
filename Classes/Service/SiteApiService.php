@@ -43,6 +43,7 @@ class Tx_Coreapi_Service_SiteApiService {
 
 		$this->getDiskUsage($data);
 		$this->getDatabaseInformation($data);
+		$this->getCountOfExtensions($data);
 
 		return $data;
 	}
@@ -64,6 +65,7 @@ class Tx_Coreapi_Service_SiteApiService {
 			'content' => $text,
 			'tstamp' => $GLOBALS['EXEC_TIME'],
 			'crdate' => $GLOBALS['EXEC_TIME'],
+			'cruser_id' => $GLOBALS['BE_USER']->user['uid']
 		));
 	}
 
@@ -93,6 +95,19 @@ class Tx_Coreapi_Service_SiteApiService {
 		$databaseSize = array_pop($databaseSizeRow);
 		$value = number_format($databaseSize, ($databaseSize > 10 ? 0 : 1)) . 'M';
 		$data['Database size'] = $value;
+	}
+
+	/**
+	 * Get count of local installed extensions
+	 *
+	 * @param array $data
+	 * @return void
+	 */
+	protected function getCountOfExtensions(&$data) {
+		/** @var Tx_Coreapi_Service_ExtensionApiService $extensionService */
+		$extensionService = t3lib_div::makeInstance('Tx_Coreapi_Service_ExtensionApiService');
+		$extensions = $extensionService->getInstalledExtensions('L');
+		$data['Count local installed extensions'] = count($extensions);
 	}
 
 }
