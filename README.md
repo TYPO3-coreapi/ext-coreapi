@@ -17,7 +17,12 @@ Checkout the project website at forge.typo3.org:
 * ExtensionApi
 	* info
 	* listInstalled
-	* updateList
+	* updateList from TER
+	* fetch an extension from TER
+	* import an extension
+	* install / uninstall extension
+	* create upload folders        
+	* configure extension
 * SiteApi
 	* info
 	* createSysNews
@@ -37,8 +42,7 @@ Checkout the project website at forge.typo3.org:
 	* run/check the reports from the reports module
 * ConfigurationApi
 	* list, get and set TYPO3 configurations
-* ExtensionApi
-	* update an extension from TER
+
 
 ### CLI call: ###
 
@@ -58,3 +62,7 @@ This will show you all available calls
 #### TYPO3 4.6 and below ####
 If you are using 4.5 or 4.6, you can still use the extension with a call like
 	./typo3/cli_dispatch.phpsh coreapi cache:clearallcaches
+	
+	# list all available commands:
+   	./typo3/cli_dispatch.phpsh coreapi help
+
