@@ -103,6 +103,10 @@ Currently the following commands are supported:
 		}
 	}
 
+	/**
+	 * @param $command
+	 * @throws InvalidArgumentException
+	 */
 	protected function runCommand($command) {
 		if (method_exists($this, $command)) {
 			$args = array_slice($this->cli_args['_DEFAULT'], 2);
@@ -139,8 +143,7 @@ Currently the following commands are supported:
 	 * @example ./cli_dispatch.phpsh coreapi cache:clearallcaches
 	 */
 	public function cacheClearallcachesCommand() {
-		$cacheApiService = t3lib_div::makeInstance('Tx_Coreapi_Service_CacheApiService');
-		$cacheApiService->initializeObject();
+		$cacheApiService = $this->getCacheApiService();
 		$cacheApiService->clearAllCaches();
 		$this->outputLine('All caches cleared');
 	}
@@ -155,8 +158,7 @@ Currently the following commands are supported:
 	 * @example ./cli_dispatch.phpsh coreapi cache:clearconfigurationcache
 	 */
 	public function cacheClearconfigurationcacheCommand() {
-		$cacheApiService = t3lib_div::makeInstance('Tx_Coreapi_Service_CacheApiService');
-		$cacheApiService->initializeObject();
+		$cacheApiService = $this->getCacheApiService();
 		$cacheApiService->clearConfigurationCache();
 		$this->outputLine('Configuration cache cleared');
 	}
@@ -170,8 +172,7 @@ Currently the following commands are supported:
 	 * @example ./cli_dispatch.phpsh coreapi cache:clearpagecache
 	 */
 	public function cacheClearpagecacheCommand() {
-		$cacheApiService = t3lib_div::makeInstance('Tx_Coreapi_Service_CacheApiService');
-		$cacheApiService->initializeObject();
+		$cacheApiService = $this->getCacheApiService();
 		$cacheApiService->clearPageCache();
 		$this->outputLine('Page cache cleared');
 	}
@@ -186,7 +187,7 @@ Currently the following commands are supported:
 	 * @example ./cli_dispatch.phpsh coreapi database:databasecompare 2
 	 */
 	public function databaseDatabasecompareCommand($actions) {
-		$databaseApiService = t3lib_div::makeInstance('Tx_Coreapi_Service_DatabaseApiService');
+		$databaseApiService = $this->getDatabaseApiService();
 		if ($actions === 'help') {
 			$actions = $databaseApiService->databaseCompareAvailableActions();
 			$this->outputTable($actions);
@@ -205,7 +206,7 @@ Currently the following commands are supported:
 	 * @example ./cli_dispatch.phpsh coreapi extension:info rtehtmlarea
 	 */
 	public function extensionInfoCommand($extkey) {
-		$extensionApiService = t3lib_div::makeInstance('Tx_Coreapi_Service_ExtensionApiService');
+		$extensionApiService = $this->getExtensionApiService();
 		$data = $extensionApiService->getExtensionInformation($extkey);
 		$this->outputLine('');
 		$this->outputLine('EXTENSION "%s": %s %s', array(strtoupper($extkey), $data['em_conf']['version'], $data['em_conf']['state']));
@@ -259,7 +260,7 @@ Currently the following commands are supported:
 	 * @example ./cli_dispatch.phpsh coreapi extension:updatelist
 	 */
 	public function extensionUpdatelistCommand() {
-		$extensionApiService = t3lib_div::makeInstance('Tx_Coreapi_Service_ExtensionApiService');
+		$extensionApiService = $this->getExtensionApiService();
 		$extensionApiService->updateMirrors();
 		$this->outputLine('Extension list has been updated.');
 	}
@@ -272,7 +273,7 @@ Currently the following commands are supported:
 	 * @example ./cli_dispatch.phpsh coreapi extension:listinstalled --type=S
 	 */
 	public function extensionListinstalledCommand($type = '') {
-		$extensionApiService = t3lib_div::makeInstance('Tx_Coreapi_Service_ExtensionApiService');
+		$extensionApiService = $this->getExtensionApiService();
 		$extensions = $extensionApiService->getInstalledExtensions($type);
 		$out = array();
 
@@ -290,8 +291,8 @@ Currently the following commands are supported:
 	 * @return void
 	 */
 	public function extensionInstallCommand($key) {
-		$service = t3lib_div::makeInstance('Tx_Coreapi_Service_ExtensionApiService');
-		$data = $service->installExtension($key);
+		$extensionApiService = $this->getExtensionApiService();
+		$data = $extensionApiService->installExtension($key);
 		$this->outputLine(sprintf('Extension "%s" is now installed!', $key));
 	}
 
@@ -302,8 +303,8 @@ Currently the following commands are supported:
 	 * @return void
 	 */
 	public function extensionUninstallCommand($key) {
-		$service = t3lib_div::makeInstance('Tx_Coreapi_Service_ExtensionApiService');
-		$data = $service->unInstallExtension($key);
+		$extensionApiService = $this->getExtensionApiService();
+		$data = $extensionApiService->unInstallExtension($key);
 		$this->outputLine(sprintf('Extension "%s" is now uninstalled!', $key));
 	}
 
@@ -331,7 +332,7 @@ Currently the following commands are supported:
 	 */
 	public function extensionConfigureCommand($key, $configfile = '', $settings = '') {
 		global $TYPO3_CONF_VARS;
-		$service = t3lib_div::makeInstance('Tx_Coreapi_Service_ExtensionApiService');
+		$extensionApiService = $this->getExtensionApiService();
 		$conf = array();
 
 		if (is_file($configfile)) {
@@ -356,7 +357,7 @@ Currently the following commands are supported:
 			throw new InvalidArgumentException(sprintf('No configuration settings!', $key));
 		}
 
-		$service->configureExtension($key, $conf);
+		$extensionApiService->configureExtension($key, $conf);
 		$this->outputLine(sprintf('Extension "%s" has been configured!', $key));
 
 	}
@@ -373,8 +374,8 @@ Currently the following commands are supported:
 	 * @return void
 	 */
 	public function extensionFetchCommand($key, $version = '', $location = 'L', $overwrite = FALSE, $mirror = '') {
-		$service = t3lib_div::makeInstance('Tx_Coreapi_Service_ExtensionApiService');
-		$data = $service->fetchExtension($key, $version, $location, $overwrite, $mirror);
+		$extensionApiService = $this->getExtensionApiService();
+		$data = $extensionApiService->fetchExtension($key, $version, $location, $overwrite, $mirror);
 		$this->outputLine(sprintf('Extension "%s" version %s has been fetched from repository!', $data['extKey'], $data['version']));
 	}
 
@@ -388,8 +389,8 @@ Currently the following commands are supported:
 	 * @return void
 	 */
 	public function extensionImportCommand($file, $location = 'L', $overwrite = FALSE) {
-		$service = t3lib_div::makeInstance('Tx_Coreapi_Service_ExtensionApiService');
-		$data = $service->importExtension($file, $location, $overwrite);
+		$extensionApiService = $this->getExtensionApiService();
+		$data = $extensionApiService->importExtension($file, $location, $overwrite);
 		$this->outputLine(sprintf('Extension "%s" has been imported!', $data['extKey']));
 	}
 
@@ -398,8 +399,8 @@ Currently the following commands are supported:
 	 * @return void
 	 */
 	public function extensionCreateuploadfoldersCommand() {
-		$service = t3lib_div::makeInstance('Tx_Coreapi_Service_ExtensionApiService');
-		$messages = $service->createUploadFolders();
+		$extensionApiService = $this->getExtensionApiService();
+		$messages = $extensionApiService->createUploadFolders();
 		if (sizeof($messages)) {
 			foreach ($messages as $message) {
 				$this->outputLine($message);
@@ -418,7 +419,7 @@ Currently the following commands are supported:
 	 * @example ./cli_dispatch.phpsh coreapi site:info
 	 */
 	public function siteInfoCommand() {
-		$siteApiService = t3lib_div::makeInstance('Tx_Coreapi_Service_SiteApiService');
+		$siteApiService = $this->getSiteApiService();
 		$infos = $siteApiService->getSiteInfo();
 		$this->outputTable($infos);
 	}
@@ -434,7 +435,7 @@ Currently the following commands are supported:
 	 * @example ./cli_dispatch.phpsh coreapi site:createsysnews "The header" "The news text"
 	 */
 	public function siteCreatesysnewsCommand($header, $text) {
-		$siteApiService = t3lib_div::makeInstance('Tx_Coreapi_Service_SiteApiService');
+		$siteApiService = $this->getSiteApiService();
 		$siteApiService->createSysNews($header, $text);
 	}
 
@@ -511,11 +512,11 @@ Currently the following commands are supported:
 	 */
 	protected function setHelpFromDocComment($operation) {
 		list($service, $command) = explode(':', $operation, 2);
-		$commandmethod = strtolower($service) . ucfirst($command) . 'Command';
-		if (method_exists($this, $commandmethod)) {
+		$commandMethod = strtolower($service) . ucfirst($command) . 'Command';
+		if (method_exists($this, $commandMethod)) {
 			$this->cli_help['options'] = '';
 			//extract doc comment
-			$ref = new ReflectionMethod(get_class($this), $commandmethod);
+			$ref = new ReflectionMethod(get_class($this), $commandMethod);
 			$comment = $ref->getDocComment();
 			$comment = preg_replace('/\/\*\*\s*(.*)\s*\*\//s', '$1', $comment);
 			$lines = explode(PHP_EOL, $comment);
@@ -595,6 +596,39 @@ Currently the following commands are supported:
 		} else {
 			$this->error(sprintf('No help available for "%s"', $operation) . PHP_EOL);
 		}
+	}
+
+	/**
+	 * @return Tx_Coreapi_Service_CacheApiService
+	 */
+	protected function getCacheApiService() {
+		$cacheApiService = t3lib_div::makeInstance('Tx_Coreapi_Service_CacheApiService');
+		$cacheApiService->initializeObject();
+		return $cacheApiService;
+	}
+
+	/**
+	 * @return Tx_Coreapi_Service_DatabaseApiService
+	 */
+	protected function getDatabaseApiService() {
+		$databaseApiService = t3lib_div::makeInstance('Tx_Coreapi_Service_DatabaseApiService');
+		return $databaseApiService;
+	}
+
+	/**
+	 * @return Tx_Coreapi_Service_ExtensionApiService
+	 */
+	protected function getExtensionApiService() {
+		$extensionApiService = t3lib_div::makeInstance('Tx_Coreapi_Service_ExtensionApiService');
+		return $extensionApiService;
+	}
+
+	/**
+	 * @return Tx_Coreapi_Service_SiteApiService
+	 */
+	protected function getSiteApiService() {
+		$siteApiService = t3lib_div::makeInstance('Tx_Coreapi_Service_SiteApiService');
+		return $siteApiService;
 	}
 }
 
