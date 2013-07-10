@@ -57,7 +57,6 @@ class Tx_Coreapi_Command_DatabaseApiCommandController extends Tx_Extbase_MVC_Con
 			$this->quit();
 		}
 	}
-
 }
 
 ?>

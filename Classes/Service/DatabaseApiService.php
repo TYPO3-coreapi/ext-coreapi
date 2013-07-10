@@ -1,6 +1,6 @@
 <?php
 
-/* * *************************************************************
+/***************************************************************
  *  Copyright notice
  *
  *  (c) 2012 Georg Ringer <georg.ringer@cyberhouse.at>
@@ -21,7 +21,7 @@
  *  GNU General Public License for more details.
  *
  *  This copyright notice MUST APPEAR in all copies of the script!
- * ************************************************************* */
+ ***************************************************************/
 
 /**
  * DB API service

@@ -68,7 +68,6 @@ class Tx_Coreapi_Command_CacheApiCommandController extends Tx_Extbase_MVC_Contro
 
 		$this->outputLine('Page cache has been cleared.');
 	}
-
 }
 
 ?>

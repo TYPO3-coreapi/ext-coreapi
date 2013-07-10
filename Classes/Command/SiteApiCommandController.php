@@ -42,7 +42,7 @@ class Tx_Coreapi_Command_SiteApiCommandController extends Tx_Extbase_MVC_Control
 		$service = $this->objectManager->get('Tx_Coreapi_Service_SiteApiService');
 		$data = $service->getSiteInfo();
 
-		foreach($data as $key => $value) {
+		foreach ($data as $key => $value) {
 			$line = wordwrap($value, self::MAXIMUM_LINE_LENGTH - 43, PHP_EOL . str_repeat(' ', 43), TRUE);
 			$this->outputLine('%-2s%-40s %s', array(' ', $key, $line));
 		}
@@ -62,7 +62,6 @@ class Tx_Coreapi_Command_SiteApiCommandController extends Tx_Extbase_MVC_Control
 		$service = $this->objectManager->get('Tx_Coreapi_Service_SiteApiService');
 		$service->createSysNews($header, $text);
 	}
-
 }
 
 ?>
