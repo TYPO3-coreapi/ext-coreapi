@@ -77,7 +77,6 @@ class Tx_Coreapi_Service_CacheApiService {
 		}
 		$this->tce->clear_cacheCmd('temp_cached');
 	}
-
 }
 
 ?>

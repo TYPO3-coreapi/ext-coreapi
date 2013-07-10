@@ -1,6 +1,6 @@
 <?php
 
-/* * *************************************************************
+/***************************************************************
  *  Copyright notice
  *
  *  (c) 2012 Georg Ringer <georg.ringer@cyberhouse.at>
@@ -21,7 +21,7 @@
  *  GNU General Public License for more details.
  *
  *  This copyright notice MUST APPEAR in all copies of the script!
- * ************************************************************* */
+ ***************************************************************/
 
 /**
  * DB API service
@@ -48,7 +48,13 @@ class Tx_Coreapi_Service_DatabaseApiService {
 	 * Constructor function
 	 */
 	public function __construct() {
-		$this->sqlHandler = t3lib_div::makeInstance('t3lib_install_Sql');
+		if (class_exists('TYPO3\\CMS\\Install\\Sql\\SchemaMigrator')) {
+			$this->sqlHandler = t3lib_div::makeInstance('TYPO3\\CMS\\Install\\Sql\\SchemaMigrator');
+		} elseif (class_exists('t3lib_install_Sql')) {
+			$this->sqlHandler = t3lib_div::makeInstance('t3lib_install_Sql');
+		} elseif (class_exists('t3lib_install')) {
+			$this->sqlHandler = t3lib_div::makeInstance('t3lib_install');
+		}
 	}
 
 	/**

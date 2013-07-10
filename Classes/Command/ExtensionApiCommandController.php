@@ -1,6 +1,6 @@
 <?php
 
-/* * *************************************************************
+/***************************************************************
  *  Copyright notice
  *
  *  (c) 2012 Georg Ringer <georg.ringer@cyberhouse.at>
@@ -21,7 +21,7 @@
  *  GNU General Public License for more details.
  *
  *  This copyright notice MUST APPEAR in all copies of the script!
- * ************************************************************* */
+ ***************************************************************/
 
 /**
  * Extension API Command Controller
@@ -54,12 +54,12 @@ class Tx_Coreapi_Command_ExtensionApiCommandController extends Tx_Extbase_MVC_Co
 
 		$outputInformation = array();
 		$outputInformation['is installed'] = ($data['is_installed'] ? 'yes' : 'no');
-		foreach($data['em_conf'] as $emConfKey => $emConfValue) {
-				// Skip empty properties
+		foreach ($data['em_conf'] as $emConfKey => $emConfValue) {
+			// Skip empty properties
 			if (empty($emConfValue)) {
 				continue;
 			}
-				// Skip properties which are already handled
+			// Skip properties which are already handled
 			if ($emConfKey === 'title' || $emConfKey === 'version' || $emConfKey === 'state') {
 				continue;
 			}
@@ -72,7 +72,7 @@ class Tx_Coreapi_Command_ExtensionApiCommandController extends Tx_Extbase_MVC_Co
 				foreach ($outputValue as $additionalKey => $additionalValue) {
 					if (is_array($additionalValue)) {
 
-						if (empty($additionalValue))  {
+						if (empty($additionalValue)) {
 							continue;
 						}
 						$description .= LF . str_repeat(' ', 28) . $additionalKey;
@@ -81,7 +81,7 @@ class Tx_Coreapi_Command_ExtensionApiCommandController extends Tx_Extbase_MVC_Co
 							$description .= str_repeat(' ', 30) . $ak . ': ' . $av . LF;
 						}
 					} else {
-						$description .= LF . str_repeat(' ', 28) . $additionalKey . ': '. $additionalValue;
+						$description .= LF . str_repeat(' ', 28) . $additionalKey . ': ' . $additionalValue;
 					}
 				}
 			} else {
@@ -132,6 +132,141 @@ class Tx_Coreapi_Command_ExtensionApiCommandController extends Tx_Extbase_MVC_Co
 	}
 
 	/**
+	 * Install(activate) an extension
+	 *
+	 * @param string $key extension key
+	 * @return void
+	 */
+	public function installCommand($key) {
+		try {
+			/** @var $service Tx_Coreapi_Service_ExtensionApiService */
+			$service = $this->objectManager->get('Tx_Coreapi_Service_ExtensionApiService');
+			$data = $service->installExtension($key);
+		} catch (Exception $e) {
+			$this->outputLine($e->getMessage());
+			$this->quit();
+		}
+		$this->outputLine(sprintf('Extension "%s" is now installed!', $key));
+	}
+
+	/**
+	 * UnInstall(deactivate) an extension
+	 *
+	 * @param string $key extension key
+	 * @return void
+	 */
+	public function uninstallCommand($key) {
+		try {
+			/** @var $service Tx_Coreapi_Service_ExtensionApiService */
+			$service = $this->objectManager->get('Tx_Coreapi_Service_ExtensionApiService');
+			$data = $service->uninstallExtension($key);
+		} catch (Exception $e) {
+			$this->outputLine($e->getMessage());
+			$this->quit();
+		}
+		$this->outputLine(sprintf('Extension "%s" is now uninstalled!', $key));
+	}
+
+	/**
+	 * Configure an extension
+	 *
+	 * This command enables you to configure an extension.
+	 *
+	 * examples:
+	 *
+	 * [1] Using a standard formatted ini-file
+	 * ./cli_dispatch.phpsh extbase extensionapi:configure rtehtmlarea --configfile=C:\rteconf.txt
+	 *
+	 * [2] Adding configuration settings directly on the command line
+	 * ./cli_dispatch.phpsh extbase extensionapi:configure rtehtmlarea --settings="enableImages=1;allowStyleAttribute=0"
+	 *
+	 * [3] A combination of [1] and [2]
+	 * ./cli_dispatch.phpsh extbase extensionapi:configure rtehtmlarea --configfile=C:\rteconf.txt --settings="enableImages=1;allowStyleAttribute=0"
+	 *
+	 * @param string $key extension key
+	 * @param string $configfile path to file containing configuration settings. Must be formatted as a standard ini-file
+	 * @param string $settings string containing configuration settings separated on the form "k1=v1;k2=v2;"
+	 * @return void
+	 */
+	public function configureCommand($key, $configfile = '', $settings = '') {
+		global $TYPO3_CONF_VARS;
+		try {
+			/** @var $service Tx_Coreapi_Service_ExtensionApiService */
+			$service = $this->objectManager->get('Tx_Coreapi_Service_ExtensionApiService');
+			$conf = array();
+			if (is_file($configfile)) {
+				$conf = parse_ini_file($configfile);
+			}
+
+			if (strlen($settings)) {
+				$arr = explode(';', $settings);
+				foreach ($arr as $v) {
+					if (strpos($v, '=') === FALSE) {
+						throw new InvalidArgumentException(sprintf('Ill-formed setting "%s"!', $v));
+					}
+					$parts = t3lib_div::trimExplode('=', $v, FALSE, 2);
+					if (!empty($parts[0])) {
+						$conf[$parts[0]] = $parts[1];
+					}
+				}
+			}
+
+			if (empty($conf)) {
+				throw new InvalidArgumentException(sprintf('No configuration settings!', $key));
+			}
+			$data = $service->configureExtension($key, $conf);
+
+		} catch (Exception $e) {
+			$this->outputLine($e->getMessage());
+			$this->quit();
+		}
+		$this->outputLine(sprintf('Extension "%s" has been configured!', $key));
+	}
+
+	/**
+	 * Fetch an extension from TER
+	 *
+	 * @param string $key extension key
+	 * @param string $version the exact version of the extension, otherwise the latest will be picked
+	 * @param string $location where to put the extension. S = typo3/sysext, G = typo3/ext, L = typo3conf/ext
+	 * @param bool $overwrite overwrite the extension if it already exists
+	 * @param string $mirror mirror to fetch the extension from, otherwise a random mirror will be selected
+	 * @return void
+	 */
+	public function fetchCommand($key, $version = '', $location = 'L', $overwrite = FALSE, $mirror = '') {
+		try {
+			/** @var $service Tx_Coreapi_Service_ExtensionApiService */
+			$service = $this->objectManager->get('Tx_Coreapi_Service_ExtensionApiService');
+			$data = $service->fetchExtension($key, $version, $location, $overwrite, $mirror);
+			$this->outputLine(sprintf('Extension "%s" version %s has been fetched from repository!', $data['extKey'], $data['version']));
+		} catch (Exception $e) {
+			$this->outputLine($e->getMessage());
+			$this->quit();
+		}
+	}
+
+	/**
+	 * Import extension from file
+	 *
+	 * @param string $file path to t3x file
+	 * @param string $location where to import the extension. S = typo3/sysext, G = typo3/ext, L = typo3conf/ext
+	 * @param boolean $overwrite overwrite the extension if it already exists
+	 * @return void
+	 */
+	public function importCommand($file, $location = 'L', $overwrite = FALSE) {
+		try {
+			/** @var $service Tx_Coreapi_Service_ExtensionApiService */
+			$service = $this->objectManager->get('Tx_Coreapi_Service_ExtensionApiService');
+			$data = $service->importExtension($file, $location, $overwrite);
+			$this->outputLine(sprintf('Extension "%s" has been imported!', $data['extKey']));
+
+		} catch (Exception $e) {
+			$this->outputLine($e->getMessage());
+			$this->quit();
+		}
+	}
+
+	/**
 	 * createUploadFoldersCommand
 	 *
 	 * @return void
@@ -149,7 +284,6 @@ class Tx_Coreapi_Command_ExtensionApiCommandController extends Tx_Extbase_MVC_Co
 			$this->outputLine('no uploadFolder created');
 		}
 	}
-
 }
 
 ?>
