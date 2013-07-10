@@ -484,7 +484,7 @@ Currently the following commands are supported:
 	 * Ensure upload folders of installed extensions exist
 	 * @return void
 	 */
-	public function extensionCreateuploadfolder() {
+	public function extensionCreateuploadfoldersCommand() {
 		$service = t3lib_div::makeInstance('Tx_Coreapi_Service_ExtensionApiService');
 		$messages = $service->createUploadFolders();
 		if (sizeof($messages)) {
