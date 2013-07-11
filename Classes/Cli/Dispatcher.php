@@ -34,7 +34,7 @@ class Tx_Coreapi_Cli_Dispatcher extends t3lib_cli {
 
 	var $cli_help = array(
 		'name' => 'coreapi',
-		'synopsis' => './cli_dispatch.phpsh service:command [options] arguments',
+		'synopsis' => './cli_dispatch.phpsh coreapi service:command [options] arguments',
 		'description' => '
 Coreapi provides a set of services/commands for doing the most common admin task in TYPO3 by CLI instead of doing it in the backend/browser.
 Currently the following commands are supported:
