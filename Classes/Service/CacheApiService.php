@@ -77,6 +77,32 @@ class Tx_Coreapi_Service_CacheApiService {
 		}
 		$this->tce->clear_cacheCmd('temp_cached');
 	}
+
+	/**
+	 * Clear all caches except the page cache.
+	 * This is especially useful on big sites when you can't just drop the page cache
+	 *
+	 * @return array with list of cleared caches
+	 */
+	public function clearAllExceptPageCache() {
+		$out = array();
+		$cacheKeys = array_keys($GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']);
+		$ignoredCaches = array('cache_pages', 'cache_pagesection');
+
+		$toBeFlushed = array_diff($cacheKeys, $ignoredCaches);
+
+		/** @var \TYPO3\CMS\Core\Cache\CacheManager $cacheManager */
+		$cacheManager = $GLOBALS['typo3CacheManager'];
+		foreach($cacheKeys as $cacheKey) {
+			if ($cacheManager->hasCache($cacheKey)) {
+				$out[] = $cacheKey;
+				$singleCache = $cacheManager->getCache($cacheKey);
+				$singleCache->flush();
+			}
+		}
+
+		return $toBeFlushed;
+	}
 }
 
 ?>

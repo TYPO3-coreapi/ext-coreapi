@@ -68,6 +68,20 @@ class Tx_Coreapi_Command_CacheApiCommandController extends Tx_Extbase_MVC_Contro
 
 		$this->outputLine('Page cache has been cleared.');
 	}
+
+	/**
+	 * Clear all caches except the page cache.
+	 * This is especially useful on big sites when you can't just drop the page cache
+	 *
+	 * @return void
+	 */
+	public function clearAllExceptPageCacheCommand() {
+		/** @var $service Tx_Coreapi_Service_CacheApiService */
+		$service = $this->objectManager->get('Tx_Coreapi_Service_CacheApiService');
+		$clearedCaches = $service->clearAllExceptPageCache();
+
+		$this->outputLine('Cleared caches: ' . implode(', ', $clearedCaches));
+	}
 }
 
 ?>
