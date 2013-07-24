@@ -135,17 +135,6 @@ class Tx_Coreapi_Service_ExtensionApiService {
 	public function createUploadFolders() {
 		$extensions = $this->getInstalledExtensions();
 
-		// 6.0 creates also Dirs
-		if (class_exists('\TYPO3\CMS\Extensionmanager\Utility\FileHandlingUtility')) {
-			$fileHandlingUtility = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\CMS\Extensionmanager\Utility\FileHandlingUtility');
-			foreach ($extensions AS $key => $extension) {
-				$extension['key'] = $key;
-				$fileHandlingUtility->ensureConfiguredDirectoriesExist($extension);
-			}
-			return array('done with \TYPO3\CMS\Extensionmanager\Utility\FileHandlingUtility->ensureConfiguredDirectoriesExist');
-		}
-
-		// < 6.0 creates no Dirs
 		$messages = array();
 		foreach ($extensions as $extKey => $extInfo) {
 			$uploadFolder = PATH_site . tx_em_Tools::uploadFolder($extKey);
@@ -175,10 +164,6 @@ class Tx_Coreapi_Service_ExtensionApiService {
 	 * @throws InvalidArgumentException
 	 */
 	public function installExtension($extensionKey) {
-		if (t3lib_div::compat_version('6.0.0')) {
-			throw new RuntimeException('This feature is not available in TYPO3 versions > 4.7 (yet)!');
-		}
-
 		// checks if extension exists
 		if (!$this->extensionExists($extensionKey)) {
 			throw new InvalidArgumentException(sprintf('Extension "%s" does not exist!', $extensionKey));
@@ -226,10 +211,6 @@ class Tx_Coreapi_Service_ExtensionApiService {
 	 * @throws InvalidArgumentException
 	 */
 	public function uninstallExtension($extensionKey) {
-		if (t3lib_div::compat_version('6.0.0')) {
-			throw new RuntimeException('This feature is not available in TYPO3 versions > 4.7 (yet)!');
-		}
-
 		// check if extension is this extension (coreapi)
 		if ($extensionKey == 'coreapi') {
 			throw new InvalidArgumentException(sprintf('Extension "%s" cannot be uninstalled!', $extensionKey));

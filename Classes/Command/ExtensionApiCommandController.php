@@ -40,9 +40,7 @@ class Tx_Coreapi_Command_ExtensionApiCommandController extends Tx_Extbase_MVC_Co
 	public function infoCommand($key) {
 		$data = array();
 		try {
-			/** @var $service Tx_Coreapi_Service_ExtensionApiService */
-			$service = $this->objectManager->get('Tx_Coreapi_Service_ExtensionApiService');
-			$data = $service->getExtensionInformation($key);
+			$data = $this->getMyService()->getExtensionInformation($key);
 		} catch (Exception $e) {
 			$this->outputLine($e->getMessage());
 			$this->quit();
@@ -104,8 +102,8 @@ class Tx_Coreapi_Command_ExtensionApiCommandController extends Tx_Extbase_MVC_Co
 			$this->quit();
 		}
 
-		/** @var $extensions Tx_Coreapi_Service_ExtensionApiService */
-		$extensions = $this->objectManager->get('Tx_Coreapi_Service_ExtensionApiService')->getInstalledExtensions($type);
+		/** @var $extensions array */
+		$extensions = $this->getMyService()->getInstalledExtensions($type);
 
 		foreach ($extensions as $key => $details) {
 			$title = $key . ' - ' . $details['version'] . '/' . $details['state'];
@@ -124,9 +122,7 @@ class Tx_Coreapi_Command_ExtensionApiCommandController extends Tx_Extbase_MVC_Co
 	 * @return void
 	 */
 	public function updateListCommand() {
-		/** @var $service Tx_Coreapi_Service_ExtensionApiService */
-		$service = $this->objectManager->get('Tx_Coreapi_Service_ExtensionApiService');
-		$service->updateMirrors();
+		$this->getMyService()->updateMirrors();
 
 		$this->outputLine('Extension list has been updated.');
 	}
@@ -139,9 +135,7 @@ class Tx_Coreapi_Command_ExtensionApiCommandController extends Tx_Extbase_MVC_Co
 	 */
 	public function installCommand($key) {
 		try {
-			/** @var $service Tx_Coreapi_Service_ExtensionApiService */
-			$service = $this->objectManager->get('Tx_Coreapi_Service_ExtensionApiService');
-			$data = $service->installExtension($key);
+			$data = $this->getMyService()->installExtension($key);
 		} catch (Exception $e) {
 			$this->outputLine($e->getMessage());
 			$this->quit();
@@ -157,9 +151,7 @@ class Tx_Coreapi_Command_ExtensionApiCommandController extends Tx_Extbase_MVC_Co
 	 */
 	public function uninstallCommand($key) {
 		try {
-			/** @var $service Tx_Coreapi_Service_ExtensionApiService */
-			$service = $this->objectManager->get('Tx_Coreapi_Service_ExtensionApiService');
-			$data = $service->uninstallExtension($key);
+			$data = $this->getMyService()->uninstallExtension($key);
 		} catch (Exception $e) {
 			$this->outputLine($e->getMessage());
 			$this->quit();
@@ -191,8 +183,6 @@ class Tx_Coreapi_Command_ExtensionApiCommandController extends Tx_Extbase_MVC_Co
 	public function configureCommand($key, $configfile = '', $settings = '') {
 		global $TYPO3_CONF_VARS;
 		try {
-			/** @var $service Tx_Coreapi_Service_ExtensionApiService */
-			$service = $this->objectManager->get('Tx_Coreapi_Service_ExtensionApiService');
 			$conf = array();
 			if (is_file($configfile)) {
 				$conf = parse_ini_file($configfile);
@@ -214,7 +204,7 @@ class Tx_Coreapi_Command_ExtensionApiCommandController extends Tx_Extbase_MVC_Co
 			if (empty($conf)) {
 				throw new InvalidArgumentException(sprintf('No configuration settings!', $key));
 			}
-			$data = $service->configureExtension($key, $conf);
+			$data = $this->getMyService()->configureExtension($key, $conf);
 
 		} catch (Exception $e) {
 			$this->outputLine($e->getMessage());
@@ -235,9 +225,7 @@ class Tx_Coreapi_Command_ExtensionApiCommandController extends Tx_Extbase_MVC_Co
 	 */
 	public function fetchCommand($key, $version = '', $location = 'L', $overwrite = FALSE, $mirror = '') {
 		try {
-			/** @var $service Tx_Coreapi_Service_ExtensionApiService */
-			$service = $this->objectManager->get('Tx_Coreapi_Service_ExtensionApiService');
-			$data = $service->fetchExtension($key, $version, $location, $overwrite, $mirror);
+			$data = $this->getMyService()->fetchExtension($key, $version, $location, $overwrite, $mirror);
 			$this->outputLine(sprintf('Extension "%s" version %s has been fetched from repository!', $data['extKey'], $data['version']));
 		} catch (Exception $e) {
 			$this->outputLine($e->getMessage());
@@ -255,9 +243,7 @@ class Tx_Coreapi_Command_ExtensionApiCommandController extends Tx_Extbase_MVC_Co
 	 */
 	public function importCommand($file, $location = 'L', $overwrite = FALSE) {
 		try {
-			/** @var $service Tx_Coreapi_Service_ExtensionApiService */
-			$service = $this->objectManager->get('Tx_Coreapi_Service_ExtensionApiService');
-			$data = $service->importExtension($file, $location, $overwrite);
+			$data = $this->getMyService()->importExtension($file, $location, $overwrite);
 			$this->outputLine(sprintf('Extension "%s" has been imported!', $data['extKey']));
 
 		} catch (Exception $e) {
@@ -272,9 +258,7 @@ class Tx_Coreapi_Command_ExtensionApiCommandController extends Tx_Extbase_MVC_Co
 	 * @return void
 	 */
 	public function createUploadFoldersCommand() {
-		/** @var $service Tx_Coreapi_Service_ExtensionApiService */
-		$service = $this->objectManager->get('Tx_Coreapi_Service_ExtensionApiService');
-		$messages = $service->createUploadFolders();
+		$messages = $this->getMyService()->createUploadFolders();
 
 		if (sizeof($messages)) {
 			foreach ($messages as $message) {
@@ -283,6 +267,22 @@ class Tx_Coreapi_Command_ExtensionApiCommandController extends Tx_Extbase_MVC_Co
 		} else {
 			$this->outputLine('no uploadFolder created');
 		}
+	}
+
+	/**
+	 * Gets the ExtensionApiService for installed TYPO3 version
+	 *
+	 * @return Tx_Coreapi_Service_ExtensionApiService
+	 */
+	public function getMyService() {
+		if (t3lib_div::compat_version('6.0.0')) {
+			$service = $this->objectManager->get('Tx_Coreapi_Service_ExtensionApi60Service');
+			$service->injectObjectManager($this->objectManager);
+		} else {
+			$service = $this->objectManager->get('Tx_Coreapi_Service_ExtensionApiService');
+		}
+
+		return $service;
 	}
 }
 
