@@ -112,7 +112,7 @@ Currently the following commands are supported:
 			$args = array_slice($this->cli_args['_DEFAULT'], 2);
 			$method = new ReflectionMethod(get_class($this), $command);
 
-			//check number of required arguments 
+			//check number of required arguments
 			if ($method->getNumberOfRequiredParameters() !== count($args)) {
 				throw new InvalidArgumentException('Wrong number of arguments');
 			}
@@ -175,6 +175,20 @@ Currently the following commands are supported:
 		$cacheApiService = $this->getCacheApiService();
 		$cacheApiService->clearPageCache();
 		$this->outputLine('Page cache cleared');
+	}
+
+	/**
+	 * Clear all caches except the page cache.
+	 * This is especially useful on big sites when you can't just drop the page cache
+	 *
+	 * @example ./cli_dispatch.phpsh coreapi cache:clearallexceptpagecache
+	 * @return void
+	 */
+	public function clearAllExceptPageCacheCommand() {
+		$cacheApiService = $this->getCacheApiService();
+		$clearedCaches = $cacheApiService->clearAllExceptPageCache();
+
+		$this->outputLine('Cleared caches: ' . implode(', ', $clearedCaches));
 	}
 
 	/**
