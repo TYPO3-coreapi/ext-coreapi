@@ -630,10 +630,10 @@ Currently the following commands are supported:
 	}
 
 	/**
-	 * @return Tx_Coreapi_Service_ExtensionApiService
+	 * @return Tx_Coreapi_Service_Core45_ExtensionApiService
 	 */
 	protected function getExtensionApiService() {
-		$extensionApiService = t3lib_div::makeInstance('Tx_Coreapi_Service_ExtensionApiService');
+		$extensionApiService = t3lib_div::makeInstance('Tx_Coreapi_Service_Core45_ExtensionApiService');
 		return $extensionApiService;
 	}
 
@@ -641,7 +641,9 @@ Currently the following commands are supported:
 	 * @return Tx_Coreapi_Service_SiteApiService
 	 */
 	protected function getSiteApiService() {
+		/** @var Tx_Coreapi_Service_SiteApiService $siteApiService */
 		$siteApiService = t3lib_div::makeInstance('Tx_Coreapi_Service_SiteApiService');
+		$siteApiService->injectExtensionApiService($this->getExtensionApiService());
 		return $siteApiService;
 	}
 }

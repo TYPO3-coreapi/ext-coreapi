@@ -28,7 +28,7 @@
  * @package TYPO3
  * @subpackage tx_coreapi
  */
-class Tx_Coreapi_Service_ExtensionApiService {
+class Tx_Coreapi_Service_Core45_ExtensionApiService implements Tx_Coreapi_Service_ExtensionApiServiceInterface {
 
 	/*
 	 * some ExtensionManager Objects require public access to these objects
@@ -99,17 +99,13 @@ class Tx_Coreapi_Service_ExtensionApiService {
 	}
 
 	/**
-	 * Update the mirrors, using the scheduler task of EXT:em
+	 * Update the mirrors
 	 *
 	 * @return void
 	 * @see tx_em_Tasks_UpdateExtensionList
 	 * @throws RuntimeException
 	 */
 	public function updateMirrors() {
-		if (t3lib_div::compat_version('6.0.0')) {
-			throw new RuntimeException('This feature is not available in TYPO3 versions > 4.7 (yet)!');
-		}
-
 		// get repositories
 		$repositories = tx_em_Database::getRepositories();
 		if (!is_array($repositories)) {
@@ -176,7 +172,7 @@ class Tx_Coreapi_Service_ExtensionApiService {
 
 		// check if localconf.php is writable
 		if (!t3lib_extMgm::isLocalconfWritable()) {
-			throw new RuntimeException('Localconf.php is not writeable!');
+			throw new RuntimeException('localconf.php is not writeable!');
 		}
 
 		$this->initializeExtensionManagerObjects();
@@ -234,7 +230,7 @@ class Tx_Coreapi_Service_ExtensionApiService {
 
 		// check if localconf.php is writable
 		if (!t3lib_extMgm::isLocalconfWritable()) {
-			throw new RuntimeException('Localconf.php is not writeable!');
+			throw new RuntimeException('localconf.php is not writeable!');
 		}
 
 		$this->initializeExtensionManagerObjects();
@@ -265,10 +261,6 @@ class Tx_Coreapi_Service_ExtensionApiService {
 	 */
 	public function configureExtension($extensionKey, $extensionConfiguration = array()) {
 		global $TYPO3_CONF_VARS;
-
-		if (t3lib_div::compat_version('6.0.0')) {
-			throw new RuntimeException('This feature is not available in TYPO3 versions > 4.7 (yet)!');
-		}
 
 		// check if extension exists
 		if (!$this->extensionExists($extensionKey)) {
@@ -359,10 +351,6 @@ class Tx_Coreapi_Service_ExtensionApiService {
 	 * @throws InvalidArgumentException
 	 */
 	public function fetchExtension($extensionKey, $version = '', $location = 'L', $overwrite = FALSE, $mirror = '') {
-		if (t3lib_div::compat_version('6.0.0')) {
-			throw new RuntimeException('This feature is not available in TYPO3 versions > 4.7 (yet)!');
-		}
-
 		$return = array();
 		if (!tx_em_Tools::importAsType($location)) {
 			if ($location === 'G') {

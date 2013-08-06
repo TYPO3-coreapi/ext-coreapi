@@ -1,0 +1,10 @@
+
+config.tx_extbase.objects {
+	 Tx_Coreapi_Service_ExtensionApiServiceInterface.className = Tx_Coreapi_Service_Core45_ExtensionApiService
+}
+
+[compatVersion = 6.0.0]
+config.tx_extbase.objects {
+	 Tx_Coreapi_Service_ExtensionApiServiceInterface.className = Tx_Coreapi_Service_Core60_ExtensionApiService
+}
+[global]

@@ -10,7 +10,11 @@ return array(
 	'tx_coreapi_service_cacheapiservice' => $extensionClassesPath . 'Service/CacheApiService.php',
 	'tx_coreapi_service_siteapiservice' => $extensionClassesPath . 'Service/SiteApiService.php',
 	'tx_coreapi_service_databaseapiservice' => $extensionClassesPath . 'Service/DatabaseApiService.php',
-	'tx_coreapi_service_extensionapiservice' => $extensionClassesPath . 'Service/ExtensionApiService.php',
+
+	'tx_coreapi_service_core45_extensionapiservice' => $extensionClassesPath . 'Service/Core45/ExtensionApiService.php',
+	'tx_coreapi_service_core60_extensionapiservice' => $extensionClassesPath . 'Service/Core60/ExtensionApiService.php',
+	'tx_coreapi_service_extensionapiserviceinterface' => $extensionClassesPath . 'Service/ExtensionApiServiceInterface.php',
+
 	'tx_coreapi_cli_dispatcher' => $extensionClassesPath .'Cli/Dispatcher.php',
 );
 

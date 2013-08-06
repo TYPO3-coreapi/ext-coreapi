@@ -31,6 +31,18 @@
 class Tx_Coreapi_Service_SiteApiService {
 
 	/**
+	 * @var Tx_Coreapi_Service_ExtensionApiServiceInterface
+	 */
+	protected $extensionApiService;
+
+	/**
+	 * @param Tx_Coreapi_Service_ExtensionApiServiceInterface $service
+	 */
+	public function injectExtensionApiService(Tx_Coreapi_Service_ExtensionApiServiceInterface $service) {
+		$this->extensionApiService = $service;
+	}
+
+	/**
 	 * Get some basic site information
 	 *
 	 * @return array
@@ -104,9 +116,7 @@ class Tx_Coreapi_Service_SiteApiService {
 	 * @return void
 	 */
 	protected function getCountOfExtensions(&$data) {
-		/** @var Tx_Coreapi_Service_ExtensionApiService $extensionService */
-		$extensionService = t3lib_div::makeInstance('Tx_Coreapi_Service_ExtensionApiService');
-		$extensions = $extensionService->getInstalledExtensions('L');
+		$extensions = $this->extensionApiService->getInstalledExtensions('L');
 		$data['Count local installed extensions'] = count($extensions);
 	}
 
