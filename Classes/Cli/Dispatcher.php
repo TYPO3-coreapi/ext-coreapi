@@ -184,7 +184,7 @@ Currently the following commands are supported:
 	 * @example ./cli_dispatch.phpsh coreapi cache:clearallexceptpagecache
 	 * @return void
 	 */
-	public function clearAllExceptPageCacheCommand() {
+	public function cacheClearallexceptpagecacheCommand() {
 		$cacheApiService = $this->getCacheApiService();
 		$clearedCaches = $cacheApiService->clearAllExceptPageCache();
 
