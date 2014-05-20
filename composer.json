@@ -1,0 +1,14 @@
+{
+    "name": "coreapi",
+    "description": "Provides a simple to use API for common core features. Goal is to be able to do the most common tasks by CLI instead of doing it in the backend/browser.",
+    "type": "typo3cms-extension",
+    "require": {
+        "lw/typo3cms-installers": "*"
+    },
+	"repositories": [
+	  {
+	    "type": "composer",
+	    "url": "http://composer.lightwerk.com"
+	  }
+	]
+}
