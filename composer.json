@@ -1,14 +1,20 @@
 {
     "name": "etobi/coreapi",
     "description": "Provides a simple to use API for common core features. Goal is to be able to do the most common tasks by CLI instead of doing it in the backend/browser.",
-    "type": "typo3cms-extension",
+    "type": "typo3-cms-extension",
+
+    "keywords": ["typo3", "extension", "deployment", "commandline", "cli"],
+
+    "authors": [
+        {
+            "name": "Tobias Liebig",
+            "homepage": "http://etobi.de"
+        }
+    ],
+
     "require": {
-        "lw/typo3cms-installers": "*"
+        "composer/installers": "~1.0"
     },
-	"repositories": [
-	  {
-	    "type": "composer",
-	    "url": "http://composer.lightwerk.com"
-	  }
-	]
+
+    "minimum-stability": "dev"
 }
