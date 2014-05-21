@@ -21,12 +21,12 @@ Checkout the project website at forge.typo3.org:
 	* fetch an extension from TER
 	* import an extension
 	* install / uninstall extension
-	* create upload folders        
+	* create upload folders
 	* configure extension
 * SiteApi
 	* info
 	* createSysNews
-	
+
 #### planned/comming soon
 
 * Backend
@@ -62,7 +62,37 @@ This will show you all available calls
 #### TYPO3 4.6 and below ####
 If you are using 4.5 or 4.6, you can still use the extension with a call like
 	./typo3/cli_dispatch.phpsh coreapi cache:clearallcaches
-	
+
 	# list all available commands:
    	./typo3/cli_dispatch.phpsh coreapi help
+
+### Usage in Composer ###
+
+    {
+        "name": "typo3cms/test-website",
+        "description": "TYPO3 CMS: test.com",
+        "keywords": ["typo3", "cms"],
+        "require": {
+            "php": ">=5.3.3",
+            "typo3core/cms": "*",
+            "etobi/coreapi": "dev-master",
+        },
+        "repositories": [
+            {
+                "type": "vcs",
+                "url": "git://github.com/etobi/ext-coreapi.git"
+            }
+        ],
+        "extra": {
+            "installer-paths": {
+                "typo3conf/ext/{$name}": [
+                    "type:typo3-cms-extension"
+                ]
+            }
+        },
+        "minimum-stability": "dev",
+        "require-dev": {},
+        "scripts": {}
+    }
+
 
