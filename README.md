@@ -66,7 +66,7 @@ If you are using 4.5 or 4.6, you can still use the extension with a call like
 	# list all available commands:
    	./typo3/cli_dispatch.phpsh coreapi help
 
-#### Usage in Composer ####
+### Usage in Composer ###
 
     {
         "name": "typo3cms/test-website",
