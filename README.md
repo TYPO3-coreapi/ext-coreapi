@@ -80,7 +80,7 @@ If you are using 4.5 or 4.6, you can still use the extension with a call like
         "repositories": [
             {
                 "type": "vcs",
-                "url": "git://github.com/etobi/ext-coreapi.git"
+                "url": "git://github.com/typo3-coreapi/ext-coreapi.git"
             }
         ],
         "extra": {
