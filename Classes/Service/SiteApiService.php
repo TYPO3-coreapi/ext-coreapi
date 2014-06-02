@@ -1,8 +1,11 @@
 <?php
+namespace Etobi\CoreAPI\Service;
+
 /***************************************************************
  *  Copyright notice
  *
  *  (c) 2012 Georg Ringer <georg.ringer@cyberhouse.at>
+ *  (c) 2014 Stefano Kowalke <blueduck@gmx.net>
  *  All rights reserved
  *
  *  This script is part of the TYPO3 project. The TYPO3 project is
@@ -21,17 +24,20 @@
  *
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
+use InvalidArgumentException;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Site API service
  *
- * @package TYPO3
- * @subpackage tx_coreapi
+ * @author Georg Ringer <georg.ringer@cyberhouse.at>
+ * @author Stefano Kowalke <blueduck@gmx.net>
+ * @package Etobi\CoreAPI\Service\SiteApiService
  */
-class Tx_Coreapi_Service_SiteApiService {
+class SiteApiService {
 
 	/**
-	 * Get some basic site information
+	 * Get some basic site information.
 	 *
 	 * @return array
 	 */
@@ -49,12 +55,13 @@ class Tx_Coreapi_Service_SiteApiService {
 	}
 
 	/**
-	 * Create a sys news record
+	 * Create a sys news record.
 	 *
 	 * @param string $header header
-	 * @param string $text text
-	 * @return void
+	 * @param string $text   text
+	 *
 	 * @throws InvalidArgumentException
+	 * @return void
 	 */
 	public function createSysNews($header, $text) {
 		if (strlen($header) === 0) {
@@ -70,10 +77,11 @@ class Tx_Coreapi_Service_SiteApiService {
 	}
 
 	/**
-	 * Get disku usage
+	 * Get disk usage.
 	 *
 	 * @author Claus Due <claus@wildside.dk>, Wildside A/S
 	 * @param array $data
+	 *
 	 * @return void
 	 */
 	protected function getDiskUsage(&$data) {
@@ -83,10 +91,11 @@ class Tx_Coreapi_Service_SiteApiService {
 	}
 
 	/**
-	 * Get database size
+	 * Get database size.
 	 *
 	 * @author Claus Due <claus@wildside.dk>, Wildside A/S
 	 * @param array $data
+	 *
 	 * @return void
 	 */
 	protected function getDatabaseInformation(&$data) {
@@ -98,18 +107,16 @@ class Tx_Coreapi_Service_SiteApiService {
 	}
 
 	/**
-	 * Get count of local installed extensions
+	 * Get count of local installed extensions.
 	 *
 	 * @param array $data
+	 *
 	 * @return void
 	 */
 	protected function getCountOfExtensions(&$data) {
-		/** @var Tx_Coreapi_Service_ExtensionApiService $extensionService */
-		$extensionService = t3lib_div::makeInstance('Tx_Coreapi_Service_ExtensionApiService');
+		/** @var \Etobi\CoreAPI\Service\ExtensionApiService $extensionService */
+		$extensionService = GeneralUtility::makeInstance('Etobi\\CoreAPI\\Service\\ExtensionApiService');
 		$extensions = $extensionService->getInstalledExtensions('L');
 		$data['Count local installed extensions'] = count($extensions);
 	}
-
 }
-
-?>

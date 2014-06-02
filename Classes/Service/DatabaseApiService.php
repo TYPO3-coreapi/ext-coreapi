@@ -1,9 +1,11 @@
 <?php
+namespace Etobi\CoreAPI\Service;
 
 /***************************************************************
  *  Copyright notice
  *
  *  (c) 2012 Georg Ringer <georg.ringer@cyberhouse.at>
+ *  (c) 2014 Stefano Kowalke <blueduck@gmx.net>
  *  All rights reserved
  *
  *  This script is part of the TYPO3 project. The TYPO3 project is
@@ -22,14 +24,18 @@
  *
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
+use InvalidArgumentException;
+use TYPO3\CMS\Core\Cache\Cache;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * DB API service
  *
- * @package TYPO3
- * @subpackage tx_coreapi
+ * @author Georg Ringer <georg.ringer@cyberhouse.at>
+ * @author Stefano Kowalke <blueduck@gmx.net>
+ * @package Etobi\CoreAPI\Service\SiteApiService
  */
-class Tx_Coreapi_Service_DatabaseApiService {
+class DatabaseApiService {
 	const ACTION_UPDATE_CLEAR_TABLE = 1;
 	const ACTION_UPDATE_ADD = 2;
 	const ACTION_UPDATE_CHANGE = 3;
@@ -40,41 +46,36 @@ class Tx_Coreapi_Service_DatabaseApiService {
 	const ACTION_REMOVE_DROP_TABLE = 8;
 
 	/**
-	 * @var t3lib_install_Sql Instance of SQL handler
+	 * @var \TYPO3\CMS\Install\Service\SqlSchemaMigrationService Instance of SQL handler
 	 */
 	protected $sqlHandler = NULL;
 
 	/**
-	 * Constructor function
+	 * Constructor function.
 	 */
 	public function __construct() {
-		if (class_exists('TYPO3\\CMS\\Install\\Sql\\SchemaMigrator')) {
-			$this->sqlHandler = t3lib_div::makeInstance('TYPO3\\CMS\\Install\\Sql\\SchemaMigrator');
-		} elseif (class_exists('t3lib_install_Sql')) {
-			$this->sqlHandler = t3lib_div::makeInstance('t3lib_install_Sql');
-		} elseif (class_exists('t3lib_install')) {
-			$this->sqlHandler = t3lib_div::makeInstance('t3lib_install');
-		}
+		$this->sqlHandler = GeneralUtility::makeInstance('TYPO3\\CMS\\Install\\Sql\\SchemaMigrator');
 	}
 
 	/**
-	 * Database compare
+	 * Database compare.
 	 *
 	 * @param string $actions comma separated list of IDs
-	 * @return array
+	 *
 	 * @throws InvalidArgumentException
+	 * @return array
 	 */
 	public function databaseCompare($actions) {
 		$errors = array();
 
-		$availableActions = array_flip(t3lib_div::makeInstance('Tx_Extbase_Reflection_ClassReflection', 'Tx_Coreapi_Service_DatabaseApiService')->getConstants());
+		$availableActions = array_flip(GeneralUtility::makeInstance('TYPO3\\CMS\\Extbase\\Reflection\\ClassReflection', 'Etobi\\CoreAPI\\Service\\DatabaseApiService')->getConstants());
 
 		if (empty($actions)) {
 			throw new InvalidArgumentException('No compare modes defined');
 		}
 
 		$allowedActions = array();
-		$actionSplit = t3lib_div::trimExplode(',', $actions);
+		$actionSplit = GeneralUtility::trimExplode(',', $actions);
 		foreach ($actionSplit as $split) {
 			if (!isset($availableActions[$split])) {
 				throw new InvalidArgumentException(sprintf('Action "%s" is not available!', $split));
@@ -83,17 +84,17 @@ class Tx_Coreapi_Service_DatabaseApiService {
 		}
 
 
-		$tblFileContent = t3lib_div::getUrl(PATH_t3lib . 'stddb/tables.sql');
+		$tblFileContent = GeneralUtility::getUrl(PATH_t3lib . 'stddb/tables.sql');
 
 		foreach ($GLOBALS['TYPO3_LOADED_EXT'] as $loadedExtConf) {
 			if (is_array($loadedExtConf) && $loadedExtConf['ext_tables.sql']) {
-				$extensionSqlContent = t3lib_div::getUrl($loadedExtConf['ext_tables.sql']);
+				$extensionSqlContent = GeneralUtility::getUrl($loadedExtConf['ext_tables.sql']);
 				$tblFileContent .= LF . LF . LF . LF . $extensionSqlContent;
 			}
 		}
 
-		if (is_callable('t3lib_cache::getDatabaseTableDefinitions')) {
-			$tblFileContent .= t3lib_cache::getDatabaseTableDefinitions();
+		if (is_callable('TYPO3\\CMS\\Core\\Cache\\Cache::getDatabaseTableDefinitions')) {
+			$tblFileContent .= Cache::getDatabaseTableDefinitions();
 		}
 
 		if (class_exists('TYPO3\\CMS\\Core\\Category\\CategoryRegistry')) {
@@ -160,14 +161,15 @@ class Tx_Coreapi_Service_DatabaseApiService {
 	}
 
 	/**
-	 * Get all available actions
+	 * Get all available actions.
+	 *
 	 * @return array
 	 */
 	public function databaseCompareAvailableActions() {
-		$availableActions = array_flip(t3lib_div::makeInstance('Tx_Extbase_Reflection_ClassReflection', 'Tx_Coreapi_Service_DatabaseApiService')->getConstants());
+		$availableActions = array_flip(GeneralUtility::makeInstance('TYPO3\\CMS\\Extbase\\Reflection\\ClassReflection', 'Etobi\\CoreAPI\\Service\\DatabaseApiService')->getConstants());
 
 		foreach ($availableActions as $number => $action) {
-			if (!t3lib_div::isFirstPartOfStr($action, 'ACTION_')) {
+			if (!GeneralUtility::isFirstPartOfStr($action, 'ACTION_')) {
 				unset($availableActions[$number]);
 			}
 		}
@@ -175,10 +177,11 @@ class Tx_Coreapi_Service_DatabaseApiService {
 	}
 
 	/**
-	 * Get all request keys, even for those requests which are not used
+	 * Get all request keys, even for those requests which are not used.
 	 *
 	 * @param array $update
 	 * @param array $remove
+	 *
 	 * @return array
 	 */
 	protected function getRequestKeys(array $update, array $remove) {
@@ -207,7 +210,4 @@ class Tx_Coreapi_Service_DatabaseApiService {
 		}
 		return $finalKeys;
 	}
-
 }
-
-?>

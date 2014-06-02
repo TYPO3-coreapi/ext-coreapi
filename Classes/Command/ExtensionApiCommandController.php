@@ -1,9 +1,11 @@
 <?php
+namespace Etobi\CoreAPI\Command;
 
 /***************************************************************
  *  Copyright notice
  *
  *  (c) 2012 Georg Ringer <georg.ringer@cyberhouse.at>
+ *  (c) 2014 Stefano Kowalke <blueduck@gmx.net>
  *  All rights reserved
  *
  *  This script is part of the TYPO3 project. The TYPO3 project is
@@ -22,26 +24,31 @@
  *
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
+use Exception;
+use InvalidArgumentException;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Extbase\Mvc\Controller\CommandController;
 
 /**
  * Extension API Command Controller
  *
- * @package TYPO3
- * @subpackage tx_coreapi
+ * @author Georg Ringer <georg.ringer@cyberhouse.at>
+ * @author Stefano Kowalke <blueduck@gmx.net>
+ * @package Etobi\CoreAPI\Service\SiteApiService
  */
-class Tx_Coreapi_Command_ExtensionApiCommandController extends Tx_Extbase_MVC_Controller_CommandController {
+class ExtensionApiCommandController extends CommandController {
 
 	/**
-	 * Information about an extension
+	 * Information about an extension.
 	 *
 	 * @param string $key extension key
+	 *
 	 * @return void
 	 */
 	public function infoCommand($key) {
 		$data = array();
 		try {
-			/** @var $service Tx_Coreapi_Service_ExtensionApiService */
-			$service = $this->objectManager->get('Tx_Coreapi_Service_ExtensionApiService');
+			$service = $this->getService();
 			$data = $service->getExtensionInformation($key);
 		} catch (Exception $e) {
 			$this->outputLine($e->getMessage());
@@ -92,9 +99,10 @@ class Tx_Coreapi_Command_ExtensionApiCommandController extends Tx_Extbase_MVC_Co
 	}
 
 	/**
-	 * List all installed extensions
+	 * List all installed extensions.
 	 *
 	 * @param string $type Extension type, can either be L for local, S for system or G for global. Leave it empty for all
+	 *
 	 * @return void
 	 */
 	public function listInstalledCommand($type = '') {
@@ -104,8 +112,7 @@ class Tx_Coreapi_Command_ExtensionApiCommandController extends Tx_Extbase_MVC_Co
 			$this->quit();
 		}
 
-		/** @var $extensions Tx_Coreapi_Service_ExtensionApiService */
-		$extensions = $this->objectManager->get('Tx_Coreapi_Service_ExtensionApiService')->getInstalledExtensions($type);
+		$extensions = $this->getService()->getInstalledExtensions($type);
 
 		foreach ($extensions as $key => $details) {
 			$title = $key . ' - ' . $details['version'] . '/' . $details['state'];
@@ -119,29 +126,28 @@ class Tx_Coreapi_Command_ExtensionApiCommandController extends Tx_Extbase_MVC_Co
 	}
 
 	/**
-	 * Update list
+	 * Update list.
 	 *
 	 * @return void
 	 */
 	public function updateListCommand() {
-		/** @var $service Tx_Coreapi_Service_ExtensionApiService */
-		$service = $this->objectManager->get('Tx_Coreapi_Service_ExtensionApiService');
+		$service = $this->getService();
 		$service->updateMirrors();
 
 		$this->outputLine('Extension list has been updated.');
 	}
 
 	/**
-	 * Install(activate) an extension
+	 * Install(activate) an extension.
 	 *
 	 * @param string $key extension key
+	 *
 	 * @return void
 	 */
 	public function installCommand($key) {
 		try {
-			/** @var $service Tx_Coreapi_Service_ExtensionApiService */
-			$service = $this->objectManager->get('Tx_Coreapi_Service_ExtensionApiService');
-			$data = $service->installExtension($key);
+			$service = $this->getService();
+			$service->installExtension($key);
 		} catch (Exception $e) {
 			$this->outputLine($e->getMessage());
 			$this->quit();
@@ -150,16 +156,16 @@ class Tx_Coreapi_Command_ExtensionApiCommandController extends Tx_Extbase_MVC_Co
 	}
 
 	/**
-	 * UnInstall(deactivate) an extension
+	 * UnInstall(deactivate) an extension.
 	 *
 	 * @param string $key extension key
+	 *
 	 * @return void
 	 */
 	public function uninstallCommand($key) {
 		try {
-			/** @var $service Tx_Coreapi_Service_ExtensionApiService */
-			$service = $this->objectManager->get('Tx_Coreapi_Service_ExtensionApiService');
-			$data = $service->uninstallExtension($key);
+			$service = $this->getService();
+			$service->uninstallExtension($key);
 		} catch (Exception $e) {
 			$this->outputLine($e->getMessage());
 			$this->quit();
@@ -168,12 +174,10 @@ class Tx_Coreapi_Command_ExtensionApiCommandController extends Tx_Extbase_MVC_Co
 	}
 
 	/**
-	 * Configure an extension
-	 *
+	 * Configure an extension.
 	 * This command enables you to configure an extension.
 	 *
-	 * examples:
-	 *
+	 * <code>
 	 * [1] Using a standard formatted ini-file
 	 * ./cli_dispatch.phpsh extbase extensionapi:configure rtehtmlarea --configfile=C:\rteconf.txt
 	 *
@@ -182,17 +186,17 @@ class Tx_Coreapi_Command_ExtensionApiCommandController extends Tx_Extbase_MVC_Co
 	 *
 	 * [3] A combination of [1] and [2]
 	 * ./cli_dispatch.phpsh extbase extensionapi:configure rtehtmlarea --configfile=C:\rteconf.txt --settings="enableImages=1;allowStyleAttribute=0"
+	 * </code>
 	 *
-	 * @param string $key extension key
+	 * @param string $key        extension key
 	 * @param string $configfile path to file containing configuration settings. Must be formatted as a standard ini-file
-	 * @param string $settings string containing configuration settings separated on the form "k1=v1;k2=v2;"
+	 * @param string $settings   string containing configuration settings separated on the form "k1=v1;k2=v2;"
+	 *
 	 * @return void
 	 */
 	public function configureCommand($key, $configfile = '', $settings = '') {
-		global $TYPO3_CONF_VARS;
 		try {
-			/** @var $service Tx_Coreapi_Service_ExtensionApiService */
-			$service = $this->objectManager->get('Tx_Coreapi_Service_ExtensionApiService');
+			$service = $this->getService();
 			$conf = array();
 			if (is_file($configfile)) {
 				$conf = parse_ini_file($configfile);
@@ -204,7 +208,7 @@ class Tx_Coreapi_Command_ExtensionApiCommandController extends Tx_Extbase_MVC_Co
 					if (strpos($v, '=') === FALSE) {
 						throw new InvalidArgumentException(sprintf('Ill-formed setting "%s"!', $v));
 					}
-					$parts = t3lib_div::trimExplode('=', $v, FALSE, 2);
+					$parts = GeneralUtility::trimExplode('=', $v, FALSE, 2);
 					if (!empty($parts[0])) {
 						$conf[$parts[0]] = $parts[1];
 					}
@@ -214,7 +218,8 @@ class Tx_Coreapi_Command_ExtensionApiCommandController extends Tx_Extbase_MVC_Co
 			if (empty($conf)) {
 				throw new InvalidArgumentException(sprintf('No configuration settings!', $key));
 			}
-			$data = $service->configureExtension($key, $conf);
+
+			$service->configureExtension($key, $conf);
 
 		} catch (Exception $e) {
 			$this->outputLine($e->getMessage());
@@ -224,19 +229,19 @@ class Tx_Coreapi_Command_ExtensionApiCommandController extends Tx_Extbase_MVC_Co
 	}
 
 	/**
-	 * Fetch an extension from TER
+	 * Fetch an extension from TER.
 	 *
-	 * @param string $key extension key
-	 * @param string $version the exact version of the extension, otherwise the latest will be picked
-	 * @param string $location where to put the extension. S = typo3/sysext, G = typo3/ext, L = typo3conf/ext
-	 * @param bool $overwrite overwrite the extension if it already exists
-	 * @param string $mirror mirror to fetch the extension from, otherwise a random mirror will be selected
+	 * @param string $key       extension key
+	 * @param string $version   the exact version of the extension, otherwise the latest will be picked
+	 * @param string $location  where to put the extension. S = typo3/sysext, G = typo3/ext, L = typo3conf/ext
+	 * @param bool   $overwrite overwrite the extension if it already exists
+	 * @param string $mirror    mirror to fetch the extension from, otherwise a random mirror will be selected
+	 *
 	 * @return void
 	 */
 	public function fetchCommand($key, $version = '', $location = 'L', $overwrite = FALSE, $mirror = '') {
 		try {
-			/** @var $service Tx_Coreapi_Service_ExtensionApiService */
-			$service = $this->objectManager->get('Tx_Coreapi_Service_ExtensionApiService');
+			$service = $this->getService();
 			$data = $service->fetchExtension($key, $version, $location, $overwrite, $mirror);
 			$this->outputLine(sprintf('Extension "%s" version %s has been fetched from repository!', $data['extKey'], $data['version']));
 		} catch (Exception $e) {
@@ -246,20 +251,19 @@ class Tx_Coreapi_Command_ExtensionApiCommandController extends Tx_Extbase_MVC_Co
 	}
 
 	/**
-	 * Import extension from file
+	 * Import extension from file.
 	 *
-	 * @param string $file path to t3x file
-	 * @param string $location where to import the extension. S = typo3/sysext, G = typo3/ext, L = typo3conf/ext
+	 * @param string  $file      path to t3x file
+	 * @param string  $location  where to import the extension. S = typo3/sysext, G = typo3/ext, L = typo3conf/ext
 	 * @param boolean $overwrite overwrite the extension if it already exists
+	 *
 	 * @return void
 	 */
 	public function importCommand($file, $location = 'L', $overwrite = FALSE) {
 		try {
-			/** @var $service Tx_Coreapi_Service_ExtensionApiService */
-			$service = $this->objectManager->get('Tx_Coreapi_Service_ExtensionApiService');
+			$service = $this->getService();
 			$data = $service->importExtension($file, $location, $overwrite);
 			$this->outputLine(sprintf('Extension "%s" has been imported!', $data['extKey']));
-
 		} catch (Exception $e) {
 			$this->outputLine($e->getMessage());
 			$this->quit();
@@ -267,13 +271,12 @@ class Tx_Coreapi_Command_ExtensionApiCommandController extends Tx_Extbase_MVC_Co
 	}
 
 	/**
-	 * createUploadFoldersCommand
+	 * Creates the upload folders of an extension.
 	 *
 	 * @return void
 	 */
 	public function createUploadFoldersCommand() {
-		/** @var $service Tx_Coreapi_Service_ExtensionApiService */
-		$service = $this->objectManager->get('Tx_Coreapi_Service_ExtensionApiService');
+		$service = $this->getService();
 		$messages = $service->createUploadFolders();
 
 		if (sizeof($messages)) {
@@ -284,6 +287,13 @@ class Tx_Coreapi_Command_ExtensionApiCommandController extends Tx_Extbase_MVC_Co
 			$this->outputLine('no uploadFolder created');
 		}
 	}
-}
 
-?>
+	/**
+	 * Returns the service object.
+	 *
+	 * @return \Etobi\CoreAPI\Service\ExtensionApiService object
+	 */
+	private function getService() {
+		return $this->objectManager->get('Etobi\\CoreAPI\\Service\\ExtensionApiService');
+	}
+}
