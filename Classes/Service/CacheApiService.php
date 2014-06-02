@@ -1,8 +1,11 @@
 <?php
+namespace Etobi\CoreAPI\Service;
+
 /***************************************************************
  *  Copyright notice
  *
  *  (c) 2012 Georg Ringer <georg.ringer@cyberhouse.at>
+ *  (c) 2014 Stefano Kowalke <blueduck@gmx.net>
  *  All rights reserved
  *
  *  This script is part of the TYPO3 project. The TYPO3 project is
@@ -21,66 +24,72 @@
  *
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
+use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
+use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Cache API service
  *
- * @package TYPO3
- * @subpackage tx_coreapi
+ * @author Georg Ringer <georg.ringer@cyberhouse.at>
+ * @author Stefano Kowalke <blueduck@gmx.net>
+ * @package Etobi\CoreAPI\Service\SiteApiService
  */
-class Tx_Coreapi_Service_CacheApiService {
+class CacheApiService {
 
 	/**
-	 * @var t3lib_TCEmain
+	 * @var \TYPO3\CMS\Core\DataHandling\DataHandler
 	 */
 	protected $tce;
 
 	/**
+	 * Initialize the object.
 	 *
+	 * @return void
 	 */
 	public function initializeObject() {
 		// Create a fake admin user
-		$adminUser = new t3lib_beUserAuth();
+		$adminUser = new BackendUserAuthentication();
 		$adminUser->user['uid'] = $GLOBALS['BE_USER']->user['uid'];
 		$adminUser->user['username'] = '_CLI_lowlevel';
 		$adminUser->user['admin'] = 1;
 		$adminUser->workspace = 0;
 
-		$this->tce = t3lib_div::makeInstance('t3lib_TCEmain');
+		$this->tce = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\DataHandling\\DataHandler');
 		$this->tce->start(Array(), Array());
 		$this->tce->start(Array(), Array(), $adminUser);
 	}
 
 	/**
-	 * Clear all caches
+	 * Clear all caches.
+	 *
+	 * @return void
 	 */
 	public function clearAllCaches() {
-		if (version_compare(TYPO3_version, '6.0.0', '<')) {
-			t3lib_extMgm::removeCacheFiles();
-		}
 		$this->tce->clear_cacheCmd('all');
 	}
 
 	/**
+	 * Clear the page cache.
 	 *
+	 * @return void
 	 */
 	public function clearPageCache() {
 		$this->tce->clear_cacheCmd('pages');
 	}
 
 	/**
+	 * Clears the configuration cache.
 	 *
+	 * @return void
 	 */
 	public function clearConfigurationCache() {
-		if (version_compare(TYPO3_version, '6.0.0', '<')) {
-			t3lib_extMgm::removeCacheFiles();
-		}
 		$this->tce->clear_cacheCmd('temp_cached');
 	}
 
 	/**
 	 * Clear all caches except the page cache.
-	 * This is especially useful on big sites when you can't just drop the page cache
+	 * This is especially useful on big sites when you can't just drop the page cache.
 	 *
 	 * @return array with list of cleared caches
 	 */
@@ -104,5 +113,3 @@ class Tx_Coreapi_Service_CacheApiService {
 		return $toBeFlushed;
 	}
 }
-
-?>

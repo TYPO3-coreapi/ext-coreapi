@@ -1,8 +1,11 @@
 <?php
+namespace Etobi\CoreAPI\Command;
+
 /***************************************************************
  *  Copyright notice
  *
  *  (c) 2012 Georg Ringer <georg.ringer@cyberhouse.at>
+ *  (c) 2014 Stefano Kowalke <blueduck@gmx.net>
  *  All rights reserved
  *
  *  This script is part of the TYPO3 project. The TYPO3 project is
@@ -21,25 +24,25 @@
  *
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
+use TYPO3\CMS\Extbase\Mvc\Controller\CommandController;
 
 /**
  * API Command Controller
  *
- * @package TYPO3
- * @subpackage tx_coreapi
+ * @author Georg Ringer <georg.ringer@cyberhouse.at>
+ * @author Stefano Kowalke <blueduck@gmx.net>
+ * @package Etobi\CoreAPI\Service\SiteApiService
  */
-class Tx_Coreapi_Command_DatabaseApiCommandController extends Tx_Extbase_MVC_Controller_CommandController {
+class DatabaseApiCommandController extends CommandController {
 
 	/**
-	 * Database compare
-	 *
+	 * Database compare.
 	 * Leave the argument 'actions' empty or use "help" to see the available ones
 	 *
 	 * @param string $actions List of actions which will be executed
 	 */
 	public function databaseCompareCommand($actions = '') {
-		/** @var $service Tx_Coreapi_Service_DatabaseApiService */
-		$service = $this->objectManager->get('Tx_Coreapi_Service_DatabaseApiService');
+		$service = $this->getService();
 
 		if ($actions === 'help' || strlen($actions) === 0) {
 			$actions = $service->databaseCompareAvailableActions();
@@ -57,6 +60,13 @@ class Tx_Coreapi_Command_DatabaseApiCommandController extends Tx_Extbase_MVC_Con
 			$this->quit();
 		}
 	}
-}
 
-?>
+	/**
+	 * Returns the service object.
+	 *
+	 * @return \Etobi\CoreAPI\Service\DatabaseApiService object
+	 */
+	private function getService() {
+		return $this->objectManager->get('Etobi\\CoreAPI\\Service\\DatabaseApiService');
+	}
+}
