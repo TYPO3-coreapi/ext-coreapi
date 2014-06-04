@@ -1,3 +1,4 @@
+[![Stories in Ready](https://badge.waffle.io/typo3-coreapi/ext-coreapi.png?label=ready&title=Ready)](https://waffle.io/typo3-coreapi/ext-coreapi)
 ## TYPO3 Extension 'coreapi'
 
 The EXT:coreapi should provide a simple to use API for common core features. Goal is to be able to do the most common tasks by CLI instead of doing it in the backend/browser.
