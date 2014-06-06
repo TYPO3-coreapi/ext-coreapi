@@ -24,9 +24,6 @@ namespace Etobi\CoreAPI\Service;
  *
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
-use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
-use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Cache API service
@@ -40,7 +37,30 @@ class CacheApiService {
 	/**
 	 * @var \TYPO3\CMS\Core\DataHandling\DataHandler
 	 */
-	protected $tce;
+	protected $dataHandler;
+
+	/**
+	 * @var \TYPO3\CMS\Extbase\Object\ObjectManager $objectManager
+	 */
+	protected $objectManager;
+
+	/**
+	 * @param \TYPO3\CMS\Core\DataHandling\DataHandler $dataHandler
+	 *
+	 * @return void
+	 */
+	public function injectDataHandler(\TYPO3\CMS\Core\DataHandling\DataHandler $dataHandler) {
+		$this->dataHandler = $dataHandler;
+	}
+
+	/**
+	 * @param \TYPO3\CMS\Extbase\Object\ObjectManager $objectManager
+	 *
+	 * @return void
+	 */
+	public function injectObjectManager(\TYPO3\CMS\Extbase\Object\ObjectManager $objectManager) {
+		$this->objectManager = $objectManager;
+	}
 
 	/**
 	 * Initialize the object.
@@ -49,15 +69,13 @@ class CacheApiService {
 	 */
 	public function initializeObject() {
 		// Create a fake admin user
-		$adminUser = new BackendUserAuthentication();
+		$adminUser = $this->objectManager->get('TYPO3\\CMS\\Core\\Authentication\\BackendUserAuthentication');
 		$adminUser->user['uid'] = $GLOBALS['BE_USER']->user['uid'];
 		$adminUser->user['username'] = '_CLI_lowlevel';
 		$adminUser->user['admin'] = 1;
 		$adminUser->workspace = 0;
 
-		$this->tce = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\DataHandling\\DataHandler');
-		$this->tce->start(Array(), Array());
-		$this->tce->start(Array(), Array(), $adminUser);
+		$this->dataHandler->start(Array(), Array(), $adminUser);
 	}
 
 	/**
@@ -66,7 +84,7 @@ class CacheApiService {
 	 * @return void
 	 */
 	public function clearAllCaches() {
-		$this->tce->clear_cacheCmd('all');
+		$this->dataHandler->clear_cacheCmd('all');
 	}
 
 	/**
@@ -75,7 +93,7 @@ class CacheApiService {
 	 * @return void
 	 */
 	public function clearPageCache() {
-		$this->tce->clear_cacheCmd('pages');
+		$this->dataHandler->clear_cacheCmd('pages');
 	}
 
 	/**
@@ -84,12 +102,13 @@ class CacheApiService {
 	 * @return void
 	 */
 	public function clearConfigurationCache() {
-		$this->tce->clear_cacheCmd('temp_cached');
+		$this->dataHandler->clear_cacheCmd('temp_cached');
 	}
 
 	/**
 	 * Clear all caches except the page cache.
-	 * This is especially useful on big sites when you can't just drop the page cache.
+	 * This is especially useful on big sites when you can't
+	 * just drop the page cache.
 	 *
 	 * @return array with list of cleared caches
 	 */
@@ -102,7 +121,7 @@ class CacheApiService {
 
 		/** @var \TYPO3\CMS\Core\Cache\CacheManager $cacheManager */
 		$cacheManager = $GLOBALS['typo3CacheManager'];
-		foreach($cacheKeys as $cacheKey) {
+		foreach ($cacheKeys as $cacheKey) {
 			if ($cacheManager->hasCache($cacheKey)) {
 				$out[] = $cacheKey;
 				$singleCache = $cacheManager->getCache($cacheKey);
