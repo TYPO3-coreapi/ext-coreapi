@@ -1,8 +1,11 @@
 <?php
+namespace Etobi\CoreAPI\Command;
+
 /***************************************************************
  *  Copyright notice
  *
  *  (c) 2012 Georg Ringer <georg.ringer@cyberhouse.at>
+ *  (c) 2014 Stefano Kowalke <blueduck@gmx.net>
  *  All rights reserved
  *
  *  This script is part of the TYPO3 project. The TYPO3 project is
@@ -21,67 +24,69 @@
  *
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
+use TYPO3\CMS\Extbase\Mvc\Controller\CommandController;
 
 /**
  * API Command Controller
  *
- * @package TYPO3
- * @subpackage tx_coreapi
+ * @author Georg Ringer <georg.ringer@cyberhouse.at>
+ * @author Stefano Kowalke <blueduck@gmx.net>
+ * @package Etobi\CoreAPI\Service\SiteApiService
  */
-class Tx_Coreapi_Command_CacheApiCommandController extends Tx_Extbase_MVC_Controller_CommandController {
+class CacheApiCommandController extends CommandController {
 
 	/**
-	 * Clear all caches
+	 * @var \Etobi\CoreAPI\Service\CacheApiService
+	 */
+	protected $cacheApiService;
+
+	/**
+	 * Inject the CacheApiService
+	 *
+	 * @param \Etobi\CoreAPI\Service\CacheApiService $cacheApiService
+	 */
+	public function injectCacheApiService(\Etobi\CoreAPI\Service\CacheApiService $cacheApiService) {
+		$this->cacheApiService = $cacheApiService;
+	}
+
+	/**
+	 * Clear all caches.
 	 *
 	 * @return void
 	 */
 	public function clearAllCachesCommand() {
-		/** @var $service Tx_Coreapi_Service_CacheApiService */
-		$service = $this->objectManager->get('Tx_Coreapi_Service_CacheApiService');
-		$service->clearAllCaches();
-
+		$this->cacheApiService->clearAllCaches();
 		$this->outputLine('All caches have been cleared.');
 	}
 
 	/**
-	 * Clear configuration cache (temp_CACHED_..)
+	 * Clear configuration cache (temp_CACHED_..).
 	 *
 	 * @return void
 	 */
 	public function clearConfigurationCacheCommand() {
-		/** @var $service Tx_Coreapi_Service_CacheApiService */
-		$service = $this->objectManager->get('Tx_Coreapi_Service_CacheApiService');
-		$service->clearConfigurationCache();
-
+		$this->cacheApiService->clearConfigurationCache();
 		$this->outputLine('Configuration cache has been cleared.');
 	}
 
 	/**
-	 * Clear page cache
+	 * Clear page cache.
 	 *
 	 * @return void
 	 */
 	public function clearPageCacheCommand() {
-		/** @var $service Tx_Coreapi_Service_CacheApiService */
-		$service = $this->objectManager->get('Tx_Coreapi_Service_CacheApiService');
-		$service->clearPageCache();
-
+		$this->cacheApiService->clearPageCache();
 		$this->outputLine('Page cache has been cleared.');
 	}
 
 	/**
 	 * Clear all caches except the page cache.
-	 * This is especially useful on big sites when you can't just drop the page cache
+	 * This is especially useful on big sites when you can't just drop the page cache.
 	 *
 	 * @return void
 	 */
 	public function clearAllExceptPageCacheCommand() {
-		/** @var $service Tx_Coreapi_Service_CacheApiService */
-		$service = $this->objectManager->get('Tx_Coreapi_Service_CacheApiService');
-		$clearedCaches = $service->clearAllExceptPageCache();
-
+		$clearedCaches = $this->cacheApiService->clearAllExceptPageCache();
 		$this->outputLine('Cleared caches: ' . implode(', ', $clearedCaches));
 	}
 }
-
-?>

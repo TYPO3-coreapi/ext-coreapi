@@ -1,8 +1,12 @@
 <?php
+namespace Etobi\CoreAPI\Service;
+
 /***************************************************************
  *  Copyright notice
  *
  *  (c) 2012 Georg Ringer <georg.ringer@cyberhouse.at>
+ *  (c) 2014 Stefano Kowalke <blueduck@gmx.net>
+ *  (c) 2013 Claus Due <claus@wildside.dk>, Wildside A/S
  *  All rights reserved
  *
  *  This script is part of the TYPO3 project. The TYPO3 project is
@@ -21,17 +25,37 @@
  *
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
+use InvalidArgumentException;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Site API service
  *
- * @package TYPO3
- * @subpackage tx_coreapi
+ * @author Georg Ringer <georg.ringer@cyberhouse.at>
+ * @author Stefano Kowalke <blueduck@gmx.net>
+ * @author Claus Due <claus@wildside.dk>, Wildside A/S
+ * @package Etobi\CoreAPI\Service\SiteApiService
  */
-class Tx_Coreapi_Service_SiteApiService {
+class SiteApiService {
 
 	/**
-	 * Get some basic site information
+	 * @var \TYPO3\CMS\Extbase\Object\ObjectManager
+	 */
+	protected $objectManager;
+
+	/**
+	 * Inject the ObjectManager
+	 *
+	 * @param \TYPO3\CMS\Extbase\Object\ObjectManager $objectManager
+	 *
+	 * @return void
+	 */
+	public function injectObjectManager(\TYPO3\CMS\Extbase\Object\ObjectManager $objectManager) {
+		$this->objectManager = $objectManager;
+	}
+
+	/**
+	 * Get some basic site information.
 	 *
 	 * @return array
 	 */
@@ -41,26 +65,28 @@ class Tx_Coreapi_Service_SiteApiService {
 			'Site name' => $GLOBALS['TYPO3_CONF_VARS']['SYS']['sitename'],
 		);
 
-		$this->getDiskUsage($data);
-		$this->getDatabaseInformation($data);
-		$this->getCountOfExtensions($data);
+		$data = $this->getDiskUsage($data);
+		$data = $this->getDatabaseSize($data);
+		$data = $this->getCountOfExtensions($data);
 
 		return $data;
 	}
 
 	/**
-	 * Create a sys news record
+	 * Create a sys news record.
 	 *
 	 * @param string $header header
-	 * @param string $text text
-	 * @return void
+	 * @param string $text   text
+	 *
 	 * @throws InvalidArgumentException
+	 * @return boolean
 	 */
 	public function createSysNews($header, $text) {
 		if (strlen($header) === 0) {
 			throw new InvalidArgumentException('No header given');
 		}
-		$GLOBALS['TYPO3_DB']->exec_INSERTquery('sys_news', array(
+
+		return $this->getDatabaseHandler()->exec_INSERTquery('sys_news', array(
 			'title' => $header,
 			'content' => $text,
 			'tstamp' => $GLOBALS['EXEC_TIME'],
@@ -70,46 +96,60 @@ class Tx_Coreapi_Service_SiteApiService {
 	}
 
 	/**
-	 * Get disku usage
+	 * Get disk usage.
 	 *
-	 * @author Claus Due <claus@wildside.dk>, Wildside A/S
 	 * @param array $data
-	 * @return void
+	 *
+	 * @return array
 	 */
-	protected function getDiskUsage(&$data) {
+	public function getDiskUsage($data) {
 		if (TYPO3_OS !== 'WIN') {
 			$data['Combined disk usage'] = trim(array_shift(explode("\t", shell_exec('du -sh ' . PATH_site))));
 		}
+
+		return $data;
 	}
 
 	/**
-	 * Get database size
+	 * Get database size.
 	 *
-	 * @author Claus Due <claus@wildside.dk>, Wildside A/S
 	 * @param array $data
-	 * @return void
+	 *
+	 * @return array
 	 */
-	protected function getDatabaseInformation(&$data) {
-		$databaseSizeResult = $GLOBALS['TYPO3_DB']->sql_query("SELECT SUM( data_length + index_length ) / 1024 / 1024 AS size FROM information_schema.TABLES WHERE table_schema = '" . TYPO3_db . "'");
-		$databaseSizeRow = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($databaseSizeResult);
+	public function getDatabaseSize($data) {
+		$databaseHandler = $this->getDatabaseHandler();
+		$databaseSizeResult = $databaseHandler->sql_query("SELECT SUM( data_length + index_length ) / 1024 / 1024 AS size FROM information_schema.TABLES WHERE table_schema = '" . TYPO3_db . "'");
+		$databaseSizeRow = $databaseHandler->sql_fetch_assoc($databaseSizeResult);
 		$databaseSize = array_pop($databaseSizeRow);
 		$value = number_format($databaseSize, ($databaseSize > 10 ? 0 : 1)) . 'M';
 		$data['Database size'] = $value;
+
+		return $data;
 	}
 
 	/**
-	 * Get count of local installed extensions
+	 * Get count of local installed extensions.
 	 *
 	 * @param array $data
-	 * @return void
+	 *
+	 * @return array
 	 */
-	protected function getCountOfExtensions(&$data) {
-		/** @var Tx_Coreapi_Service_ExtensionApiService $extensionService */
-		$extensionService = t3lib_div::makeInstance('Tx_Coreapi_Service_ExtensionApiService');
-		$extensions = $extensionService->getInstalledExtensions('L');
+	public function getCountOfExtensions($data) {
+		/** @var \Etobi\CoreAPI\Service\ExtensionApiService $extensionService */
+		$extensionService = $this->objectManager->get('Etobi\\CoreAPI\\Service\\ExtensionApiService');
+		$extensions = $extensionService->listExtensions('Local');
 		$data['Count local installed extensions'] = count($extensions);
+
+		return $data;
 	}
 
+	/**
+	 * Returns the DatabaseConnection
+	 *
+	 * @return \TYPO3\CMS\Core\Database\DatabaseConnection
+	 */
+	protected function getDatabaseHandler() {
+		return $GLOBALS['TYPO3_DB'];
+	}
 }
-
-?>

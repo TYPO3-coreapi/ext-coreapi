@@ -1,0 +1,49 @@
+filter:
+    excluded_paths:
+        - 'Resources/Public/vendor/*'
+        - 'Tests/*'
+
+tools:
+
+    external_code_coverage:
+        timeout: 700
+
+    php_sim: true
+
+    php_code_sniffer:
+        enabled: true
+        command: phpcs -n
+        config:
+            standard: TYPO3CMS
+
+    php_cs_fixer: false
+
+    php_mess_detector:
+        enabled: true
+        config:
+            code_size_rules:
+                cyclomatic_complexity: true
+                npath_complexity: true
+                excessive_class_complexity: true
+            controversial_rules:
+                superglobals: false
+
+    php_pdepend: true
+
+    php_analyzer:
+        enabled: true
+        config:
+            basic_semantic_checks:
+                enabled: true
+                property_on_interface: true
+                missing_abstract_methods: true
+            deprecation_checks:
+                enabled: true
+            simplify_boolean_return:
+                enabled: true
+            metrics_lack_of_cohesion_methods:
+                enabled: true
+            dead_assignments:
+                enabled: true
+
+    sensiolabs_security_checker: true
