@@ -39,17 +39,28 @@ use TYPO3\CMS\Extbase\Mvc\Controller\CommandController;
 class ExtensionApiCommandController extends CommandController {
 
 	/**
+	 * @var \Etobi\CoreAPI\Service\ExtensionApiService
+	 * @inject
+	 */
+	protected $extensionApiService;
+
+	/**
+	 * @var \TYPO3\CMS\Extbase\SignalSlot\Dispatcher
+	 * @inject
+	 */
+	protected $signalSlotDispatcher;
+
+	/**
 	 * Information about an extension.
 	 *
-	 * @param string $key extension key
+	 * @param string $key The extension key
 	 *
 	 * @return void
 	 */
 	public function infoCommand($key) {
 		$data = array();
 		try {
-			$service = $this->getService();
-			$data = $service->getExtensionInformation($key);
+			$data = $this->extensionApiService->getExtensionInformation($key);
 		} catch (Exception $e) {
 			$this->outputLine($e->getMessage());
 			$this->quit();
@@ -101,18 +112,19 @@ class ExtensionApiCommandController extends CommandController {
 	/**
 	 * List all installed extensions.
 	 *
-	 * @param string $type Extension type, can either be L for local, S for system or G for global. Leave it empty for all
+	 * @param string $type Extension type, can either be "Local",
+	 *                     "System" or "Global". Leave it empty for all
 	 *
 	 * @return void
 	 */
 	public function listInstalledCommand($type = '') {
-		$type = strtoupper($type);
-		if (!empty($type) && $type !== 'L' && $type !== 'G' && $type !== 'S') {
-			$this->outputLine('Only "L", "S" and "G" are supported as type (or nothing)');
+		$type = ucfirst(strtolower($type));
+		if (!empty($type) && $type !== 'Local' && $type !== 'Global' && $type !== 'System') {
+			$this->outputLine('Only "Local", "System" and "Global" are supported as type (or nothing)');
 			$this->quit();
 		}
 
-		$extensions = $this->getService()->getInstalledExtensions($type);
+		$extensions = $this->extensionApiService->listExtensions($type);
 
 		foreach ($extensions as $key => $details) {
 			$title = $key . ' - ' . $details['version'] . '/' . $details['state'];
@@ -131,23 +143,27 @@ class ExtensionApiCommandController extends CommandController {
 	 * @return void
 	 */
 	public function updateListCommand() {
-		$service = $this->getService();
-		$service->updateMirrors();
+		$this->outputLine('This may take a while...');
+		$result = $this->extensionApiService->updateMirrors();
 
-		$this->outputLine('Extension list has been updated.');
+		if ($result) {
+			$this->outputLine('Extension list has been updated.');
+		} else {
+			$this->outputLine('Extension list already up-to-date.');
+		}
 	}
 
 	/**
 	 * Install(activate) an extension.
 	 *
-	 * @param string $key extension key
+	 * @param string $key The extension key
 	 *
 	 * @return void
 	 */
 	public function installCommand($key) {
 		try {
-			$service = $this->getService();
-			$service->installExtension($key);
+			$this->emitPackagesMayHaveChangedSignal();
+			$this->extensionApiService->installExtension($key);
 		} catch (Exception $e) {
 			$this->outputLine($e->getMessage());
 			$this->quit();
@@ -158,14 +174,13 @@ class ExtensionApiCommandController extends CommandController {
 	/**
 	 * UnInstall(deactivate) an extension.
 	 *
-	 * @param string $key extension key
+	 * @param string $key The extension key
 	 *
 	 * @return void
 	 */
 	public function uninstallCommand($key) {
 		try {
-			$service = $this->getService();
-			$service->uninstallExtension($key);
+			$this->extensionApiService->uninstallExtension($key);
 		} catch (Exception $e) {
 			$this->outputLine($e->getMessage());
 			$this->quit();
@@ -188,18 +203,17 @@ class ExtensionApiCommandController extends CommandController {
 	 * ./cli_dispatch.phpsh extbase extensionapi:configure rtehtmlarea --configfile=C:\rteconf.txt --settings="enableImages=1;allowStyleAttribute=0"
 	 * </code>
 	 *
-	 * @param string $key        extension key
-	 * @param string $configfile path to file containing configuration settings. Must be formatted as a standard ini-file
-	 * @param string $settings   string containing configuration settings separated on the form "k1=v1;k2=v2;"
+	 * @param string $key        The extension key
+	 * @param string $configFile Path to file containing configuration settings. Must be formatted as a standard ini-file
+	 * @param string $settings   String containing configuration settings separated on the form "k1=v1;k2=v2;"
 	 *
 	 * @return void
 	 */
-	public function configureCommand($key, $configfile = '', $settings = '') {
+	public function configureCommand($key, $configFile = '', $settings = '') {
 		try {
-			$service = $this->getService();
 			$conf = array();
-			if (is_file($configfile)) {
-				$conf = parse_ini_file($configfile);
+			if (is_file($configFile)) {
+				$conf = parse_ini_file($configFile);
 			}
 
 			if (strlen($settings)) {
@@ -219,7 +233,7 @@ class ExtensionApiCommandController extends CommandController {
 				throw new InvalidArgumentException(sprintf('No configuration settings!', $key));
 			}
 
-			$service->configureExtension($key, $conf);
+			$this->extensionApiService->configureExtension($key, $conf);
 
 		} catch (Exception $e) {
 			$this->outputLine($e->getMessage());
@@ -231,19 +245,37 @@ class ExtensionApiCommandController extends CommandController {
 	/**
 	 * Fetch an extension from TER.
 	 *
-	 * @param string $key       extension key
-	 * @param string $version   the exact version of the extension, otherwise the latest will be picked
-	 * @param string $location  where to put the extension. S = typo3/sysext, G = typo3/ext, L = typo3conf/ext
-	 * @param bool   $overwrite overwrite the extension if it already exists
-	 * @param string $mirror    mirror to fetch the extension from, otherwise a random mirror will be selected
+	 * @param string $key       The extension key
+	 * @param string $version   The exact version of the extension, otherwise the latest will be picked
+	 * @param string $location  Where to put the extension. System = typo3/sysext, Global = typo3/ext, Local = typo3conf/ext
+	 * @param bool   $overwrite Overwrite the extension if already exists
+	 * @param int    $mirror    Mirror to fetch the extension from. Run extensionapi:listmirrors to get the list of all available repositories, otherwise a random mirror will be selected
 	 *
 	 * @return void
 	 */
-	public function fetchCommand($key, $version = '', $location = 'L', $overwrite = FALSE, $mirror = '') {
+	public function fetchCommand($key, $version = '', $location = 'Local', $overwrite = FALSE, $mirror = -1) {
 		try {
-			$service = $this->getService();
-			$data = $service->fetchExtension($key, $version, $location, $overwrite, $mirror);
-			$this->outputLine(sprintf('Extension "%s" version %s has been fetched from repository!', $data['extKey'], $data['version']));
+			$data = $this->extensionApiService->fetchExtension($key, $version, $location, $overwrite, $mirror);
+			$this->outputLine(sprintf('Extension "%s" version %s has been fetched from repository! Dependencies were not resolved.', $data['main']['extKey'], $data['main']['version']));
+		} catch (Exception $e) {
+			$this->outputLine($e->getMessage());
+			$this->quit();
+		}
+	}
+
+	/**
+	 * Lists the possible mirrors
+	 *
+	 * @return void
+	 */
+	public function listMirrorsCommand() {
+		try {
+			$mirrors = $this->extensionApiService->listMirrors();
+			$key = 0;
+			foreach ($mirrors as $mirror) {
+				$this->outputLine($key . ' = ' . $mirror['title'] . ' ' . $mirror['host']);
+				++$key;
+			}
 		} catch (Exception $e) {
 			$this->outputLine($e->getMessage());
 			$this->quit();
@@ -253,16 +285,15 @@ class ExtensionApiCommandController extends CommandController {
 	/**
 	 * Import extension from file.
 	 *
-	 * @param string  $file      path to t3x file
-	 * @param string  $location  where to import the extension. S = typo3/sysext, G = typo3/ext, L = typo3conf/ext
-	 * @param boolean $overwrite overwrite the extension if it already exists
+	 * @param string  $file      Path to t3x file
+	 * @param string  $location  Where to import the extension. System = typo3/sysext, Global = typo3/ext, Local = typo3conf/ext
+	 * @param boolean $overwrite Overwrite the extension if already exists
 	 *
 	 * @return void
 	 */
-	public function importCommand($file, $location = 'L', $overwrite = FALSE) {
+	public function importCommand($file, $location = 'Local', $overwrite = FALSE) {
 		try {
-			$service = $this->getService();
-			$data = $service->importExtension($file, $location, $overwrite);
+			$data = $this->extensionApiService->importExtension($file, $location, $overwrite);
 			$this->outputLine(sprintf('Extension "%s" has been imported!', $data['extKey']));
 		} catch (Exception $e) {
 			$this->outputLine($e->getMessage());
@@ -271,29 +302,11 @@ class ExtensionApiCommandController extends CommandController {
 	}
 
 	/**
-	 * Creates the upload folders of an extension.
-	 *
-	 * @return void
-	 */
-	public function createUploadFoldersCommand() {
-		$service = $this->getService();
-		$messages = $service->createUploadFolders();
-
-		if (sizeof($messages)) {
-			foreach ($messages as $message) {
-				$this->outputLine($message);
-			}
-		} else {
-			$this->outputLine('no uploadFolder created');
-		}
-	}
-
-	/**
-	 * Returns the service object.
+	 * Emits packages may have changed signal
 	 *
 	 * @return \Etobi\CoreAPI\Service\ExtensionApiService object
 	 */
-	private function getService() {
-		return $this->objectManager->get('Etobi\\CoreAPI\\Service\\ExtensionApiService');
+	protected function emitPackagesMayHaveChangedSignal() {
+		$this->signalSlotDispatcher->dispatch('PackageManagement', 'packagesMayHaveChanged');
 	}
 }

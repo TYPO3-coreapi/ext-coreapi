@@ -24,6 +24,7 @@ namespace Etobi\CoreAPI\Command;
  *
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
+
 use TYPO3\CMS\Extbase\Mvc\Controller\CommandController;
 
 /**
@@ -36,13 +37,28 @@ use TYPO3\CMS\Extbase\Mvc\Controller\CommandController;
 class SiteApiCommandController extends CommandController {
 
 	/**
+	 * @var \Etobi\CoreAPI\Service\SiteApiService
+	 */
+	protected $siteApiService;
+
+	/**
+	 * Inject the SiteApiService
+	 *
+	 * @param \Etobi\CoreAPI\Service\SiteApiService $siteApiService
+	 *
+	 * @return void
+	 */
+	public function injectSiteApiService(\Etobi\CoreAPI\Service\SiteApiService $siteApiService) {
+		$this->siteApiService = $siteApiService;
+	}
+
+	/**
 	 * Basic information about the system.
 	 *
 	 * @return void
 	 */
 	public function infoCommand() {
-		$service = $this->getService();
-		$data = $service->getSiteInfo();
+		$data = $this->siteApiService->getSiteInfo();
 
 		foreach ($data as $key => $value) {
 			$line = wordwrap($value, self::MAXIMUM_LINE_LENGTH - 43, PHP_EOL . str_repeat(' ', 43), TRUE);
@@ -59,16 +75,19 @@ class SiteApiCommandController extends CommandController {
 	 * @return void
 	 */
 	public function createSysNewsCommand($header, $text = '') {
-		$service = $this->getService();
-		$service->createSysNews($header, $text);
-	}
+		$result = FALSE;
 
-	/**
-	 * Returns the service object.
-	 *
-	 * @return \Etobi\CoreAPI\Service\SiteApiService object
-	 */
-	private function getService() {
-		return $this->objectManager->get('Etobi\\CoreAPI\\Service\\SiteApiService');
+		try {
+			$result = $this->siteApiService->createSysNews($header, $text);
+		} catch (\Exception $e) {
+			$this->outputLine($e->getMessage());
+			$this->quit();
+		}
+
+		if ($result) {
+			$this->outputLine('News entry successfully created.');
+		} else {
+			$this->outputLine('News entry NOT created.');
+		}
 	}
 }

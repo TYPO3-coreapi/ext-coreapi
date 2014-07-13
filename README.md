@@ -1,3 +1,5 @@
+[![Stories in Ready](https://badge.waffle.io/typo3-coreapi/ext-coreapi.png?label=ready&title=Ready)](https://waffle.io/typo3-coreapi/ext-coreapi) [![Build Status](https://travis-ci.org/TYPO3-coreapi/ext-coreapi.svg?branch=feature%2FMakeExtensionApiCompatibleTo62)](https://travis-ci.org/TYPO3-coreapi/ext-coreapi) [![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/TYPO3-coreapi/ext-coreapi/badges/quality-score.png?b=feature%2FMakeExtensionApiCompatibleTo62)](https://scrutinizer-ci.com/g/TYPO3-coreapi/ext-coreapi/?branch=feature%2FMakeExtensionApiCompatibleTo62) [![Code Coverage](https://scrutinizer-ci.com/g/TYPO3-coreapi/ext-coreapi/badges/coverage.png?b=feature%2FMakeExtensionApiCompatibleTo62)](https://scrutinizer-ci.com/g/TYPO3-coreapi/ext-coreapi/?branch=feature%2FMakeExtensionApiCompatibleTo62)
+
 ## TYPO3 Extension 'coreapi'
 
 The EXT:coreapi should provide a simple to use API for common core features. Goal is to be able to do the most common tasks by CLI instead of doing it in the backend/browser.
@@ -21,12 +23,12 @@ Checkout the project website at forge.typo3.org:
 	* fetch an extension from TER
 	* import an extension
 	* install / uninstall extension
-	* create upload folders        
+	* create upload folders
 	* configure extension
 * SiteApi
 	* info
 	* createSysNews
-	
+
 #### planned/comming soon
 
 * Backend
@@ -53,16 +55,45 @@ If you want to use the cache clearing commands, you need to add the following sn
 	options.clearCache.all=1
 	options.clearCache.pages=1
 
-#### TYPO3 4.7+ ####
-If you are using TYPO3 4.7+, you can use the awesome CommandController of Extbase.
+#### TYPO3 6.2 and below ####
+Support for TYPO3 CMS below 6.2 was removed with version 0.2.0 of this extension. In case you need to use ext:coreapi in combination with lower version of TYPO3 CMS use version [0.1.0-beta](https://github.com/TYPO3-coreapi/ext-coreapi/releases/tag/0.1.0-beta "0.1.0-beta").
+
+#### TYPO3 6.2+ ####
+If you are using TYPO3 6.2+, you can use the awesome CommandController of Extbase.
 
 This will show you all available calls
 	./typo3/cli_dispatch.phpsh extbase help
 
-#### TYPO3 4.6 and below ####
-If you are using 4.5 or 4.6, you can still use the extension with a call like
-	./typo3/cli_dispatch.phpsh coreapi cache:clearallcaches
-	
-	# list all available commands:
-   	./typo3/cli_dispatch.phpsh coreapi help
+### Usage in Composer ###
 
+    {
+        "name": "typo3cms/test-website",
+        "description": "TYPO3 CMS: test.com",
+        "keywords": ["typo3", "cms"],
+        "require": {
+            "php": ">=5.3.3",
+            "typo3core/cms": "*",
+            "etobi/coreapi": "dev-master",
+        },
+        "extra": {
+            "installer-paths": {
+                "typo3conf/ext/{$name}": [
+                    "type:typo3-cms-extension"
+                ]
+            }
+        },
+        "minimum-stability": "dev",
+        "require-dev": {},
+        "scripts": {}
+    }
+
+### Running the unit tests
+
+The Unit Tests rely on [vfsStream](https://github.com/mikey179/vfsStream "vfsStream"). For some reasons ext:coreapi don't add this dependencies by itself but uses the one which is alread defined for Core Unit Tests.
+To install vfsStream copy the composer.json from the TYPO3 CMS package into you webroot folder and execute the command `composer install`. This will install all dependencies into Packages/Libraries/.
+
+Then run the Unit Tests.
+
+    cp typo3_src/composer.json .
+    composer install
+    ./bin/phpunit --colors -c typo3/sysext/core/Build/UnitTests.xml typo3conf/ext/coreapi/Tests/Unit/

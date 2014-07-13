@@ -1,7 +1,7 @@
 <?php
 
 $EM_CONF[$_EXTKEY] = array(
-	'title' => 'coreapi',
+	'title' => 'Coreapi',
 	'description' => 'coreapi',
 	'category' => 'plugin',
 	'author' => 'Tobias Liebig,Georg Ringer,Stefano Kowalke',
