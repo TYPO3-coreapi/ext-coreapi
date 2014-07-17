@@ -27,7 +27,7 @@ namespace Etobi\CoreApi\Tests\Unit\Service;
  *
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
- 
+
 use TYPO3\CMS\Core\Tests\UnitTestCase;
 
 /**
@@ -45,10 +45,16 @@ class DatabaseApiServiceTest extends UnitTestCase {
 	protected $subject;
 
 	/**
+	 * @var \TYPO3\CMS\Extbase\Object\ObjectManager|\PHPUnit_Framework_MockObject_MockObject $objectManagerMock
+	 */
+	protected $objectManagerMock;
+
+	/**
 	 * Setup the test
 	 */
 	public function setup() {
 		$this->subject = $this->getMock('Etobi\\CoreApi\\Service\\DatabaseApiService', array('dummy'));
+		$this->objectManagerMock = $this->getMock('TYPO3\\CMS\\Extbase\\Object\\ObjectManager', array('get'));
 	}
 
 	/**
@@ -61,55 +67,37 @@ class DatabaseApiServiceTest extends UnitTestCase {
 	/**
 	 * @test
 	 * @covers ::databaseCompare
-	 * @expectedException \InvalidArgumentException
-	 * @expectedExceptionMessage No compare modes defined
 	 */
-	public function databaseCompareNoCompareModesDefinedThrowsException() {
-		$objectManagerMock = $this->getMock('TYPO3\\CMS\\Extbase\\Object\\ObjectManager', array('get'));
-		$classReflectionMock = $this->getMock('TYPO3\\CMS\\Extbase\\Reflection\\ClassReflection', array(), array(new \Etobi\CoreAPI\Service\DatabaseApiService()));
+	public function databaseCompareCreatesDatabaseCompareRealObjectWhenNoDryRunIsDemanded() {
+		$comparator = $this->getMock('Etobi\\CoreAPI\\Service\\DatabaseCompareReal');
+		$this->objectManagerMock->expects($this->once())->method('get')->with('Etobi\\CoreAPI\\Service\\DatabaseCompareReal')->will($this->returnValue($comparator));
 
-		$classReflectionMock->expects($this->once())->method('getConstants')->will($this->returnValue($this->getAvailableActions()));
-		$objectManagerMock->expects($this->once())->method('get')->with('TYPO3\\CMS\\Extbase\\Reflection\\ClassReflection', 'Etobi\\CoreAPI\\Service\\DatabaseApiService')->will($this->returnValue($classReflectionMock));
-		$this->subject->injectObjectManager($objectManagerMock);
-
-		$this->subject->databaseCompare('');
+		$this->subject->injectObjectManager($this->objectManagerMock);
+		$this->subject->databaseCompare(1, FALSE);
 	}
-
 	/**
 	 * @test
 	 * @covers ::databaseCompare
-	 * @expectedException \InvalidArgumentException
-	 * @expectedExceptionMessage Action "10" is not available!
 	 */
-	public function databaseCompareActionsNoDefinedThrowsException() {
-		$objectManagerMock = $this->getMock('TYPO3\\CMS\\Extbase\\Object\\ObjectManager', array('get'));
-		$classReflectionMock = $this->getMock('TYPO3\\CMS\\Extbase\\Reflection\\ClassReflection', array(), array(new \Etobi\CoreAPI\Service\DatabaseApiService()));
-		$this->subject = $this->getMock('Etobi\\CoreApi\\Service\\DatabaseApiService', array('trimExplode'));
+	public function databaseCompareCreatesDatabaseCompareDryObjectWhenDryRunIsDemanded() {
+		$comparator = $this->getMock('Etobi\\CoreAPI\\Service\\DatabaseCompareDry');
+		$this->objectManagerMock->expects($this->once())->method('get')->with('Etobi\\CoreAPI\\Service\\DatabaseCompareDry')->will($this->returnValue($comparator));
 
-		$classReflectionMock->expects($this->once())->method('getConstants')->will($this->returnValue($this->getAvailableActions()));
-		$objectManagerMock->expects($this->once())->method('get')->with('TYPO3\\CMS\\Extbase\\Reflection\\ClassReflection', 'Etobi\\CoreAPI\\Service\\DatabaseApiService')->will($this->returnValue($classReflectionMock));
-		$this->subject->expects($this->once())->method('trimExplode')->with('10')->will($this->returnValue(array('10')));
-		$this->subject->injectObjectManager($objectManagerMock);
-
-		$this->subject->databaseCompare('10');
+		$this->subject->injectObjectManager($this->objectManagerMock);
+		$this->subject->databaseCompare(1, TRUE);
 	}
+
 
 	/**
 	 * @test
 	 * @covers ::databaseCompare
 	 */
 	public function databaseCompareOneAction() {
-		$this->markTestIncomplete();
-		$objectManagerMock = $this->getMock('TYPO3\\CMS\\Extbase\\Object\\ObjectManager', array('get'));
-		$classReflectionMock = $this->getMock('TYPO3\\CMS\\Extbase\\Reflection\\ClassReflection', array(), array(new \Etobi\CoreAPI\Service\DatabaseApiService()));
-		$this->subject = $this->getMock('Etobi\\CoreApi\\Service\\DatabaseApiService', array('trimExplode'));
+		$comparator = $this->getMock('Etobi\\CoreAPI\\Service\\DatabaseCompareReal');
+		$this->objectManagerMock->expects($this->once())->method('get')->with('Etobi\\CoreAPI\\Service\\DatabaseCompareReal')->will($this->returnValue($comparator));
+		$this->subject->injectObjectManager($this->objectManagerMock);
 
-		$classReflectionMock->expects($this->once())->method('getConstants')->will($this->returnValue($this->getAvailableActions()));
-		$objectManagerMock->expects($this->once())->method('get')->with('TYPO3\\CMS\\Extbase\\Reflection\\ClassReflection', 'Etobi\\CoreAPI\\Service\\DatabaseApiService')->will($this->returnValue($classReflectionMock));
-		$this->subject->expects($this->once())->method('trimExplode')->with('1')->will($this->returnValue(array('1')));
-		$this->subject->injectObjectManager($objectManagerMock);
-
-		$this->subject->databaseCompare('1');
+		$this->subject->databaseCompare('1', FALSE);
 	}
 
 	/**

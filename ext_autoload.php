@@ -11,5 +11,8 @@ return array(
 	'Etobi\CoreAPI\Service\CacheApiService' => $extensionClassesPath . 'Service/CacheApiService.php',
 	'Etobi\CoreAPI\Service\SiteApiService' => $extensionClassesPath . 'Service/SiteApiService.php',
 	'Etobi\CoreAPI\Service\DatabaseApiService' => $extensionClassesPath . 'Service/DatabaseApiService.php',
+	'Etobi\CoreAPI\Service\DatabaseComparator' => $extensionClassesPath . 'Service/DatabaseComparator.php',
+	'Etobi\CoreAPI\Service\DatabaseCompareDry' => $extensionClassesPath . 'Service/DatabaseCompareDry.php',
+	'Etobi\CoreAPI\Service\DatabaseCompareReal' => $extensionClassesPath . 'Service/DatabaseCompareReal.php',
 	'Etobi\CoreAPI\Service\ExtensionApiService' => $extensionClassesPath . 'Service/ExtensionApiService.php'
 );

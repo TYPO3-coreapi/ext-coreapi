@@ -40,8 +40,9 @@ class DatabaseApiCommandController extends CommandController {
 	 * Leave the argument 'actions' empty or use "help" to see the available ones
 	 *
 	 * @param string $actions List of actions which will be executed
+	 * @param bool   $dry
 	 */
-	public function databaseCompareCommand($actions = '') {
+	public function databaseCompareCommand($actions = '', $dry = FALSE) {
 		$service = $this->getService();
 
 		if ($actions === 'help' || strlen($actions) === 0) {
@@ -52,12 +53,25 @@ class DatabaseApiCommandController extends CommandController {
 			$this->quit();
 		}
 
-		$result = $service->databaseCompare($actions);
-		if (empty($result)) {
-			$this->outputLine('DB has been compared');
+		$result = $service->databaseCompare($actions, $dry);
+
+		if ($dry) {
+			$this->outputLine('DB compare would execute the following queries:');
+			foreach($result as $key => $set) {
+				$this->outputLine(sprintf('### Action: %s ###', $key));
+				$this->outputLine('===================================');
+				foreach($set as $line) {
+					$this->outputLine($line);
+				}
+				$this->outputLine(LF);
+			}
 		} else {
-			$this->outputLine('DB could not be compared, Error(s): %s', array(LF . implode(LF, $result)));
-			$this->quit();
+			if (empty($result)) {
+				$this->outputLine('DB has been compared');
+			} else {
+				$this->outputLine('DB could not be compared, Error(s): %s', array(LF . implode(LF, $result)));
+				$this->quit();
+			}
 		}
 	}
 
