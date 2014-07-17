@@ -4,6 +4,7 @@ $extensionPath = TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath('cor
 $extensionClassesPath = $extensionPath . 'Classes/';
 
 return array(
+	'Etobi\CoreAPI\Command\BackendApiCommandController' => $extensionClassesPath . 'Command/BackendApiCommandController.php',
 	'Etobi\CoreAPI\Command\DatabaseApiCommandController' => $extensionClassesPath . 'Command/DatabaseApiCommandController.php',
 	'Etobi\CoreAPI\Command\SiteApiCommandController' => $extensionClassesPath . 'Command/SiteApiCommandController.php',
 	'Etobi\CoreAPI\Command\CacheApiCommandController' => $extensionClassesPath . 'Command/CacheApiCommandController.php',
