@@ -118,6 +118,18 @@ class CacheApiService {
 	}
 
 	/**
+	 * Clears the opcode cache.
+	 *
+	 * @param string|NULL $fileAbsPath The file as absolute path to be cleared
+	 *                                 or NULL to clear completely.
+	 *
+	 * @return void
+	 */
+	public function clearAllActiveOpcodeCache($fileAbsPath = NULL) {
+		$this->clearAllActiveOpcodeCacheWrapper($fileAbsPath);
+	}
+
+	/**
 	 * Clear all caches except the page cache.
 	 * This is especially useful on big sites when you can't
 	 * just drop the page cache.
@@ -142,5 +154,17 @@ class CacheApiService {
 		}
 
 		return $toBeFlushed;
+	}
+
+	/**
+	 * Clears the opcode cache. This just wraps the static call for testing purposes.
+	 *
+	 * @param string|NULL $fileAbsPath The file as absolute path to be cleared
+	 *                                 or NULL to clear completely.
+	 *
+	 * @return void
+	 */
+	protected function clearAllActiveOpcodeCacheWrapper($fileAbsPath) {
+		\TYPO3\CMS\Core\Utility\OpcodeCacheUtility::clearAllActive($fileAbsPath);
 	}
 }

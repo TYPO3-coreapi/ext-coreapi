@@ -60,7 +60,7 @@ class CacheApiCommandController extends CommandController {
 	}
 
 	/**
-	 * Clear system cache
+	 * Clear system cache.
 	 *
 	 * @return void
 	 */
@@ -68,6 +68,25 @@ class CacheApiCommandController extends CommandController {
 		$this->cacheApiService->clearSystemCache();
 		$this->outputLine('System cache has been cleared');
 	}
+
+	/**
+	 * Clears the opcode cache.
+	 *
+	 * @param string|NULL $fileAbsPath The file as absolute path to be cleared
+	 *                                 or NULL to clear completely.
+	 *
+	 * @return void
+	 */
+	public function clearAllActiveOpcodeCacheCommand($fileAbsPath = NULL) {
+		$this->cacheApiService->clearAllActiveOpcodeCache($fileAbsPath);
+
+		if ($fileAbsPath !== NULL) {
+			$this->outputLine(sprintf('The opcode cache for the file %s has been cleared', $fileAbsPath));
+		} else {
+			$this->outputLine('The complete opcode cache has been cleared');
+		}
+	}
+
 	/**
 	 * Clear configuration cache (temp_CACHED_..).
 	 *
