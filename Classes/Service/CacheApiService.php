@@ -109,6 +109,15 @@ class CacheApiService {
 	}
 
 	/**
+	 * Clear the system cache
+	 *
+	 * @return void
+	 */
+	public function clearSystemCache() {
+		$this->dataHandler->clear_cacheCmd('system');
+	}
+
+	/**
 	 * Clear all caches except the page cache.
 	 * This is especially useful on big sites when you can't
 	 * just drop the page cache.

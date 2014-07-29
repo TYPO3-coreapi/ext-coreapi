@@ -124,4 +124,13 @@ class CacheApiServiceTest extends UnitTestCase {
 		$GLOBALS['typo3CacheManager'] = $cacheManager;
 		$this->subject->clearAllExceptPageCache();
 	}
+
+	/**
+	 * @test
+	 * @covers ::clearSystemCache
+	 */
+	public function clearSystemCacheClearsSystemCache() {
+		$this->dataHandlerMock->expects($this->once())->method('clear_cacheCmd')->with('system');
+		$this->subject->clearSystemCache();
+	}
 }
