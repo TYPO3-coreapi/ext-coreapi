@@ -59,13 +59,13 @@ class BackendApiCommandController extends CommandController {
 			unlink(PATH_typo3conf . 'LOCK_BACKEND');
 			if (@is_file((PATH_typo3conf . 'LOCK_BACKEND'))) {
 				$this->outputLine('ERROR: Could not remove lock file \'typo3conf/LOCK_BACKEND\'!');
-				$this->sendAndExit(1);
+				$this->quit(1);
 			} else {
 				$this->outputLine('Removed lock file \'typo3conf/LOCK_BACKEND\'');
 			}
 		} else {
 			$this->outputLine('No lock file \'typo3conf/LOCK_BACKEND\' was found, hence no lock could be removed.');
-			$this->sendAndExit(2);
+			$this->quit(1);
 		}
 	}
 }

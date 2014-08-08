@@ -63,7 +63,7 @@ class ExtensionApiCommandController extends CommandController {
 			$data = $this->extensionApiService->getExtensionInformation($key);
 		} catch (Exception $e) {
 			$this->outputLine($e->getMessage());
-			$this->quit();
+			$this->quit(1);
 		}
 
 		$this->outputLine('');
@@ -121,7 +121,7 @@ class ExtensionApiCommandController extends CommandController {
 		$type = ucfirst(strtolower($type));
 		if (!empty($type) && $type !== 'Local' && $type !== 'Global' && $type !== 'System') {
 			$this->outputLine('Only "Local", "System" and "Global" are supported as type (or nothing)');
-			$this->quit();
+			$this->quit(1);
 		}
 
 		$extensions = $this->extensionApiService->listExtensions($type);
@@ -166,7 +166,7 @@ class ExtensionApiCommandController extends CommandController {
 			$this->extensionApiService->installExtension($key);
 		} catch (Exception $e) {
 			$this->outputLine($e->getMessage());
-			$this->quit();
+			$this->quit(1);
 		}
 		$this->outputLine(sprintf('Extension "%s" is now installed!', $key));
 	}
@@ -183,7 +183,7 @@ class ExtensionApiCommandController extends CommandController {
 			$this->extensionApiService->uninstallExtension($key);
 		} catch (Exception $e) {
 			$this->outputLine($e->getMessage());
-			$this->quit();
+			$this->quit(1);
 		}
 		$this->outputLine(sprintf('Extension "%s" is now uninstalled!', $key));
 	}
@@ -230,6 +230,7 @@ class ExtensionApiCommandController extends CommandController {
 			}
 
 			if (empty($conf)) {
+				$this->response->setExitCode(1);
 				throw new InvalidArgumentException(sprintf('No configuration settings!', $key));
 			}
 
@@ -237,7 +238,7 @@ class ExtensionApiCommandController extends CommandController {
 
 		} catch (Exception $e) {
 			$this->outputLine($e->getMessage());
-			$this->quit();
+			$this->quit(1);
 		}
 		$this->outputLine(sprintf('Extension "%s" has been configured!', $key));
 	}
@@ -259,7 +260,7 @@ class ExtensionApiCommandController extends CommandController {
 			$this->outputLine(sprintf('Extension "%s" version %s has been fetched from repository! Dependencies were not resolved.', $data['main']['extKey'], $data['main']['version']));
 		} catch (Exception $e) {
 			$this->outputLine($e->getMessage());
-			$this->quit();
+			$this->quit(1);
 		}
 	}
 
@@ -278,7 +279,7 @@ class ExtensionApiCommandController extends CommandController {
 			}
 		} catch (Exception $e) {
 			$this->outputLine($e->getMessage());
-			$this->quit();
+			$this->quit(1);
 		}
 	}
 
@@ -297,7 +298,7 @@ class ExtensionApiCommandController extends CommandController {
 			$this->outputLine(sprintf('Extension "%s" has been imported!', $data['extKey']));
 		} catch (Exception $e) {
 			$this->outputLine($e->getMessage());
-			$this->quit();
+			$this->quit(1);
 		}
 	}
 

@@ -70,7 +70,7 @@ class DatabaseApiCommandController extends CommandController {
 				$this->outputLine('DB has been compared');
 			} else {
 				$this->outputLine('DB could not be compared, Error(s): %s', array(LF . implode(LF, $result)));
-				$this->quit();
+				$this->quit(1);
 			}
 		}
 	}

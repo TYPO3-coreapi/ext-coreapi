@@ -81,13 +81,14 @@ class SiteApiCommandController extends CommandController {
 			$result = $this->siteApiService->createSysNews($header, $text);
 		} catch (\Exception $e) {
 			$this->outputLine($e->getMessage());
-			$this->quit();
+			$this->quit(1);
 		}
 
 		if ($result) {
 			$this->outputLine('News entry successfully created.');
 		} else {
 			$this->outputLine('News entry NOT created.');
+			$this->quit(1);
 		}
 	}
 }
