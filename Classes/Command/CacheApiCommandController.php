@@ -34,6 +34,31 @@ use TYPO3\CMS\Extbase\Mvc\Controller\CommandController;
  * @package Etobi\CoreAPI\Service\SiteApiService
  */
 class CacheApiCommandController extends CommandController {
+	/**
+	 * @var \TYPO3\CMS\Core\Log\LogManager $logManager
+	 */
+	protected $logManager;
+
+	/**
+	 * @var \TYPO3\CMS\Core\Log\Logger $logger
+	 */
+	protected $logger;
+
+	/**
+	 * @param \TYPO3\CMS\Core\Log\LogManager $logManager
+	 *
+	 * @return void
+	 */
+	public function injectLogManager(\TYPO3\CMS\Core\Log\LogManager $logManager) {
+		$this->logManager = $logManager;
+	}
+
+	/**
+	 * Initialize the object
+	 */
+	public function initializeObject() {
+		$this->logger = $this->objectManager->get('\TYPO3\CMS\Core\Log\LogManager')->getLogger(__CLASS__);
+	}
 
 	/**
 	 * @var \Etobi\CoreAPI\Service\CacheApiService
@@ -56,7 +81,9 @@ class CacheApiCommandController extends CommandController {
 	 */
 	public function clearAllCachesCommand() {
 		$this->cacheApiService->clearAllCaches();
-		$this->outputLine('All caches have been cleared.');
+		$message = 'All caches have been cleared.';
+		$this->logger->info($message);
+		$this->outputLine($message);
 	}
 
 	/**
@@ -66,7 +93,9 @@ class CacheApiCommandController extends CommandController {
 	 */
 	public function clearSystemCacheCommand() {
 		$this->cacheApiService->clearSystemCache();
-		$this->outputLine('System cache has been cleared');
+		$message = 'System cache has been cleared';
+		$this->logger->info($message);
+		$this->outputLine($message);
 	}
 
 	/**
@@ -81,9 +110,13 @@ class CacheApiCommandController extends CommandController {
 		$this->cacheApiService->clearAllActiveOpcodeCache($fileAbsPath);
 
 		if ($fileAbsPath !== NULL) {
-			$this->outputLine(sprintf('The opcode cache for the file %s has been cleared', $fileAbsPath));
+			$message = sprintf('The opcode cache for the file %s has been cleared', $fileAbsPath);
+			$this->outputLine($message);
+			$this->logger->info($message);
 		} else {
-			$this->outputLine('The complete opcode cache has been cleared');
+			$message = 'The complete opcode cache has been cleared';
+			$this->outputLine($message);
+			$this->logger->info($message);
 		}
 	}
 
@@ -94,7 +127,9 @@ class CacheApiCommandController extends CommandController {
 	 */
 	public function clearConfigurationCacheCommand() {
 		$this->cacheApiService->clearConfigurationCache();
-		$this->outputLine('Configuration cache has been cleared.');
+		$message = 'Configuration cache has been cleared.';
+		$this->logger->info($message);
+		$this->outputLine($message);
 	}
 
 	/**
@@ -104,7 +139,9 @@ class CacheApiCommandController extends CommandController {
 	 */
 	public function clearPageCacheCommand() {
 		$this->cacheApiService->clearPageCache();
-		$this->outputLine('Page cache has been cleared.');
+		$message = 'Page cache has been cleared.';
+		$this->logger->info($message);
+		$this->outputLine($message);
 	}
 
 	/**
@@ -115,6 +152,8 @@ class CacheApiCommandController extends CommandController {
 	 */
 	public function clearAllExceptPageCacheCommand() {
 		$clearedCaches = $this->cacheApiService->clearAllExceptPageCache();
-		$this->outputLine('Cleared caches: ' . implode(', ', $clearedCaches));
+		$message = 'Cleared caches: ' . implode(', ', $clearedCaches);
+		$this->logger->info($message);
+		$this->outputLine($message);
 	}
 }

@@ -37,6 +37,32 @@ use TYPO3\CMS\Extbase\Mvc\Controller\CommandController;
 class SiteApiCommandController extends CommandController {
 
 	/**
+	 * @var \TYPO3\CMS\Core\Log\LogManager $logManager
+	 */
+	protected $logManager;
+
+	/**
+	 * @var \TYPO3\CMS\Core\Log\Logger $logger
+	 */
+	protected $logger;
+
+	/**
+	 * @param \TYPO3\CMS\Core\Log\LogManager $logManager
+	 *
+	 * @return void
+	 */
+	public function injectLogManager(\TYPO3\CMS\Core\Log\LogManager $logManager) {
+		$this->logManager = $logManager;
+	}
+
+	/**
+	 * Initialize the object
+	 */
+	public function initializeObject() {
+		$this->logger = $this->objectManager->get('\TYPO3\CMS\Core\Log\LogManager')->getLogger(__CLASS__);
+	}
+
+	/**
 	 * @var \Etobi\CoreAPI\Service\SiteApiService
 	 */
 	protected $siteApiService;
@@ -64,6 +90,8 @@ class SiteApiCommandController extends CommandController {
 			$line = wordwrap($value, self::MAXIMUM_LINE_LENGTH - 43, PHP_EOL . str_repeat(' ', 43), TRUE);
 			$this->outputLine('%-2s%-40s %s', array(' ', $key, $line));
 		}
+
+		$this->logger->info('siteApi:info executes successfully.');
 	}
 
 	/**

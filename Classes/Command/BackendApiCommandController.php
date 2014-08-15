@@ -32,6 +32,33 @@ use TYPO3\CMS\Extbase\Mvc\Controller\CommandController;
  * API Command Controller
  */
 class BackendApiCommandController extends CommandController {
+
+	/**
+	 * @var \TYPO3\CMS\Core\Log\LogManager $logManager
+	 */
+	protected $logManager;
+
+	/**
+	 * @var \TYPO3\CMS\Core\Log\Logger $logger
+	 */
+	protected $logger;
+
+	/**
+	 * @param \TYPO3\CMS\Core\Log\LogManager $logManager
+	 *
+	 * @return void
+	 */
+	public function injectLogManager(\TYPO3\CMS\Core\Log\LogManager $logManager) {
+		$this->logManager = $logManager;
+	}
+
+	/**
+	 * Initialize the object
+	 */
+	public function initializeObject() {
+		$this->logger = $this->objectManager->get('\TYPO3\CMS\Core\Log\LogManager')->getLogger(__CLASS__);
+	}
+
 	/**
 	 * Locks backend access for all users by writing a lock file that is checked when the backend is accessed.
 	 *
@@ -39,15 +66,21 @@ class BackendApiCommandController extends CommandController {
 	 */
 	public function lockCommand($redirectUrl = NULL) {
 		if (@is_file((PATH_typo3conf . 'LOCK_BACKEND'))) {
-			$this->outputLine('A lockfile already exists. Overwriting it...');
+			$message = 'A lockfile already exists. Overwriting it...';
+			$this->outputLine($message);
+			$this->logger->info($message);
 		}
 
 		\TYPO3\CMS\Core\Utility\GeneralUtility::writeFile(PATH_typo3conf . 'LOCK_BACKEND', (string)$redirectUrl);
 
 		if ($redirectUrl === NULL) {
-			$this->outputLine('Wrote lock file to \'typo3conf/LOCK_BACKEND\'');
+			$message = 'Wrote lock file to \'typo3conf/LOCK_BACKEND\'';
+			$this->outputLine($message);
+			$this->logger->info($message);
 		} else {
-			$this->outputLine('Wrote lock file to \'typo3conf/LOCK_BACKEND\' with instruction to redirect to: \'' . $redirectUrl . '\'');
+			$message = 'Wrote lock file to \'typo3conf/LOCK_BACKEND\' with instruction to redirect to: \'' . $redirectUrl . '\'';
+			$this->outputLine($message);
+			$this->logger->info($message);
 		}
 	}
 
@@ -58,13 +91,19 @@ class BackendApiCommandController extends CommandController {
 		if (@is_file((PATH_typo3conf . 'LOCK_BACKEND'))) {
 			unlink(PATH_typo3conf . 'LOCK_BACKEND');
 			if (@is_file((PATH_typo3conf . 'LOCK_BACKEND'))) {
-				$this->outputLine('ERROR: Could not remove lock file \'typo3conf/LOCK_BACKEND\'!');
+				$message = 'ERROR: Could not remove lock file \'typo3conf/LOCK_BACKEND\'!';
+				$this->outputLine($message);
+				$this->logger->error($message);
 				$this->quit(1);
 			} else {
-				$this->outputLine('Removed lock file \'typo3conf/LOCK_BACKEND\'');
+				$message = 'Removed lock file \'typo3conf/LOCK_BACKEND\'';
+				$this->outputLine($message);
+				$this->logger->info($message);
 			}
 		} else {
-			$this->outputLine('No lock file \'typo3conf/LOCK_BACKEND\' was found, hence no lock could be removed.');
+			$message = 'No lock file \'typo3conf/LOCK_BACKEND\' was found, hence no lock could be removed.';
+			$this->outputLine($message);
+			$this->logger->info($message);
 			$this->quit(1);
 		}
 	}
