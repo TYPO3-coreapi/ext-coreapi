@@ -26,98 +26,62 @@ use InvalidArgumentException;
 class DatabaseCompareDry extends DatabaseComparator {
 
 	/**
-	 * @var \TYPO3\CMS\Install\Service\SqlSchemaMigrationService $schemaMigrationService Instance of SQL handler
-	 */
-	protected $schemaMigrationService;
-
-	/**
-	 * Inject the SchemaMigrationService
-	 *
-	 * @param \TYPO3\CMS\Install\Service\SqlSchemaMigrationService $schemaMigrationService
-	 */
-	public function injectSchemaMigrationService(\TYPO3\CMS\Install\Service\SqlSchemaMigrationService $schemaMigrationService) {
-		$this->schemaMigrationService = $schemaMigrationService;
-	}
-
-	/**
 	 * Database compare.
 	 *
 	 * @param string $actions comma separated list of IDs
-	 *
 	 * @throws InvalidArgumentException
-	 *
 	 * @return array
 	 */
 	public function compare($actions) {
 		$errors = array();
-		$allowedActions = array();
+		$results = array();
 
-		$this->checkAvailableActions($actions, $allowedActions);
+		$allowedActions = $this->getAllowedActions($actions);
 
-		$tblFileContent = '';
+		$expectedSchema = $this->sqlExpectedSchemaService->getExpectedDatabaseSchema();
+		$currentSchema = $this->schemaMigrationService->getFieldDefinitions_database();
 
-		foreach ($GLOBALS['TYPO3_LOADED_EXT'] as $loadedExtConf) {
-			if (is_array($loadedExtConf) && $loadedExtConf['ext_tables.sql']) {
-				$extensionSqlContent = $this->getUrl($loadedExtConf['ext_tables.sql']);
-				$tblFileContent .= LF . LF . LF . LF . $extensionSqlContent;
-			}
+		$addCreateChange = $this->schemaMigrationService->getDatabaseExtra($expectedSchema, $currentSchema);
+		$addCreateChange = $this->schemaMigrationService->getUpdateSuggestions($addCreateChange);
+
+		$dropRemove = $this->schemaMigrationService->getDatabaseExtra($currentSchema, $expectedSchema);
+		$dropRemove = $this->schemaMigrationService->getUpdateSuggestions($dropRemove, 'remove');
+
+		if ($allowedActions[self::ACTION_UPDATE_CLEAR_TABLE] == 1) {
+			$results['update_clear_table'] = $addCreateChange['clear_table'];
 		}
 
-		if (is_callable('TYPO3\\CMS\\Core\\Cache\\Cache::getDatabaseTableDefinitions')) {
-			$tblFileContent .= $this->getDatabaseTableDefinitionsFromCache();
+		if ($allowedActions[self::ACTION_UPDATE_ADD] == 1) {
+			$results['update_add'] = $addCreateChange['add'];
 		}
 
-		if (class_exists('TYPO3\\CMS\\Core\\Category\\CategoryRegistry')) {
-			$tblFileContent .= $this->getCategoryRegistry()->getDatabaseTableDefinitions();
+		if ($allowedActions[self::ACTION_UPDATE_CHANGE] == 1) {
+			$results['update_change'] = $addCreateChange['change'];
 		}
 
-		if ($tblFileContent) {
-			$fileContent = implode(LF, $this->schemaMigrationService->getStatementArray($tblFileContent, 1, '^CREATE TABLE '));
-			$fieldDefinitionsFromFile = $this->schemaMigrationService->getFieldDefinitions_fileContent($fileContent);
+		if ($allowedActions[self::ACTION_UPDATE_CREATE_TABLE] == 1) {
+			$results['update_create_table'] = $addCreateChange['create_table'];
+		}
 
-			$fieldDefinitionsFromDb = $this->schemaMigrationService->getFieldDefinitions_database();
+		if ($allowedActions[self::ACTION_REMOVE_CHANGE] == 1) {
+			$results['remove_change'] = $dropRemove['change'];
+		}
 
-			$diff = $this->schemaMigrationService->getDatabaseExtra($fieldDefinitionsFromFile, $fieldDefinitionsFromDb);
-			$updateStatements = $this->schemaMigrationService->getUpdateSuggestions($diff);
+		if ($allowedActions[self::ACTION_REMOVE_DROP] == 1) {
+			$results['remove_drop'] = $dropRemove['drop'];
+		}
 
-			$results = array();
+		if ($allowedActions[self::ACTION_REMOVE_CHANGE_TABLE] == 1) {
+			$results['remove_change_table'] = $dropRemove['change_table'];
+		}
 
-			if ($allowedActions[self::ACTION_UPDATE_CLEAR_TABLE] == 1) {
-				$results['clear_table'] = $updateStatements['clear_table'];
-			}
+		if ($allowedActions[self::ACTION_REMOVE_DROP_TABLE] == 1) {
+			$results['remove_drop_table'] = $dropRemove['drop_table'];
+		}
 
-			if ($allowedActions[self::ACTION_UPDATE_ADD] == 1) {
-				$results['add'] = $updateStatements['add'];
-			}
-
-			if ($allowedActions[self::ACTION_UPDATE_CHANGE] == 1) {
-				$results['update_change'] = $updateStatements['change'];
-			}
-
-			if ($allowedActions[self::ACTION_REMOVE_CHANGE] == 1) {
-				$results['remove_change'] = $updateStatements['change'];
-			}
-
-			if ($allowedActions[self::ACTION_REMOVE_DROP] == 1) {
-				$results['drop'] = $updateStatements['drop'];
-			}
-
-			if ($allowedActions[self::ACTION_UPDATE_CREATE_TABLE] == 1) {
-				$results['create_table'] = $updateStatements['create_table'];
-			}
-
-			if ($allowedActions[self::ACTION_REMOVE_CHANGE_TABLE] == 1) {
-				$results['change_table'] = $updateStatements['change_table'];
-			}
-
-			if ($allowedActions[self::ACTION_REMOVE_DROP_TABLE] == 1) {
-				$results['change_table'] = $updateStatements['change_table'];
-			}
-
-			foreach ($results as $key => $resultSet) {
-				if (!empty($resultSet)) {
-					$errors[$key] = $resultSet;
-				}
+		foreach ($results as $key => $resultSet) {
+			if (!empty($resultSet)) {
+				$errors[$key] = $resultSet;
 			}
 		}
 

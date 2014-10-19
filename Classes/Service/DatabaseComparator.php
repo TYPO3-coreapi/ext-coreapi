@@ -17,6 +17,7 @@ namespace Etobi\CoreAPI\Service;
 use InvalidArgumentException;
 use TYPO3\CMS\Core\Cache\Cache;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Install\Service\SqlExpectedSchemaService;
 
 /**
  * Class DatabaseCompareAbstract
@@ -40,12 +41,38 @@ abstract class DatabaseComparator {
 	protected $objectManager;
 
 	/**
+	 * @var \TYPO3\CMS\Install\Service\SqlSchemaMigrationService $schemaMigrationService Instance of SQL handler
+	 */
+	protected $schemaMigrationService;
+
+	/**
+	 * @var \TYPO3\CMS\Install\Service\SqlExpectedSchemaService
+	 */
+	protected $sqlExpectedSchemaService;
+
+	/**
 	 * Inject the ObjectManager
 	 *
 	 * @param \TYPO3\CMS\Extbase\Object\ObjectManager $objectManager
 	 */
 	public function injectObjectManager(\TYPO3\CMS\Extbase\Object\ObjectManager $objectManager) {
 		$this->objectManager = $objectManager;
+	}
+
+	/**
+	 * @param \TYPO3\CMS\Install\Service\SqlExpectedSchemaService $sqlExpectedSchemaService
+	 */
+	public function injectSqlExpectedSchemaService(SqlExpectedSchemaService $sqlExpectedSchemaService) {
+		$this->sqlExpectedSchemaService = $sqlExpectedSchemaService;
+	}
+
+	/**
+	 * Inject the SchemaMigrationService
+	 *
+	 * @param \TYPO3\CMS\Install\Service\SqlSchemaMigrationService $schemaMigrationService
+	 */
+	public function injectSchemaMigrationService(\TYPO3\CMS\Install\Service\SqlSchemaMigrationService $schemaMigrationService) {
+		$this->schemaMigrationService = $schemaMigrationService;
 	}
 
 	/**
@@ -81,46 +108,33 @@ abstract class DatabaseComparator {
 	}
 
 	/**
-	 * Wrapper around Cache::getDatabaseTableDefinitions()
+	 * Reflect, checks and return the allowed actions
 	 *
-	 * @return string
+	 * @param string $actions comma separated list of IDs
+	 * @return array
 	 */
-	protected function getDatabaseTableDefinitionsFromCache() {
-		return Cache::getDatabaseTableDefinitions();
-	}
-
-	/**
-	 * Wrapper around \TYPO3\CMS\Core\Category\CategoryRegistry::getInstance()
-	 *
-	 * @return \TYPO3\CMS\Core\Category\CategoryRegistry
-	 */
-	protected function getCategoryRegistry() {
-		return \TYPO3\CMS\Core\Category\CategoryRegistry::getInstance();
-	}
-
-	/**
-	 * Checks the given actions against the defined and allowed actions
-	 *
-	 * @param       $actions
-	 * @param array $allowedActions
-	 *
-	 * @throws InvalidArgumentException
-	 */
-	protected function checkAvailableActions($actions, array &$allowedActions = array()) {
-		$classReflection = $this->objectManager->get('TYPO3\\CMS\\Extbase\\Reflection\\ClassReflection', 'Etobi\\CoreAPI\\Service\\DatabaseComparator');
-		$availableActions = array_flip($classReflection->getConstants());
-
+	protected function getAllowedActions($actions) {
 		if (empty($actions)) {
 			throw new InvalidArgumentException('No compare modes defined');
 		}
 
-		$actionSplit = $this->trimExplode($actions);
-		foreach ($actionSplit as $split) {
-			if (!isset($availableActions[$split])) {
-				throw new InvalidArgumentException(sprintf('Action "%s" is not available!', $split));
+		$allowedActions = array();
+		$availableActions = array_flip(
+			$this->objectManager->get(
+				'TYPO3\\CMS\\Extbase\\Reflection\\ClassReflection',
+				'Etobi\\CoreAPI\\Service\\DatabaseComparator'
+			)->getConstants()
+		);
+
+		$actions = $this->trimExplode($actions);
+		foreach ($actions as $action) {
+			if (!isset($availableActions[$action])) {
+				throw new InvalidArgumentException(sprintf('Action "%s" is not available!', $action));
 			}
-			$allowedActions[$split] = 1;
+			$allowedActions[$action] = 1;
 		}
+
+		return $allowedActions;
 	}
 }
 

@@ -75,6 +75,7 @@ class DatabaseApiServiceTest extends UnitTestCase {
 		$this->subject->injectObjectManager($this->objectManagerMock);
 		$this->subject->databaseCompare(1, FALSE);
 	}
+
 	/**
 	 * @test
 	 * @covers ::databaseCompare

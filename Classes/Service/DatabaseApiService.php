@@ -25,7 +25,6 @@ namespace Etobi\CoreAPI\Service;
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
 use InvalidArgumentException;
-use TYPO3\CMS\Core\Cache\Cache;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
@@ -38,19 +37,14 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 class DatabaseApiService {
 
 	/**
-	 * @var \Etobi\CoreAPI\Service\DatabaseComparator $comparator
-	 */
-	protected $comparator = NULL;
-
-	/**
-	 * @var \TYPO3\CMS\Install\Service\SqlSchemaMigrationService $schemaMigrationService Instance of SQL handler
-	 */
-	protected $schemaMigrationService;
-
-	/**
 	 * @var \TYPO3\CMS\Extbase\Object\ObjectManager $objectManager
 	 */
 	protected $objectManager;
+
+	/**
+	 * @var \Etobi\CoreAPI\Service\DatabaseComparator $comparator
+	 */
+	protected $comparator = NULL;
 
 	/**
 	 * Inject the ObjectManager
@@ -59,15 +53,6 @@ class DatabaseApiService {
 	 */
 	public function injectObjectManager(\TYPO3\CMS\Extbase\Object\ObjectManager $objectManager) {
 		$this->objectManager = $objectManager;
-	}
-
-	/**
-	 * Inject the SchemaMigrationService
-	 *
-	 * @param \TYPO3\CMS\Install\Service\SqlSchemaMigrationService $schemaMigrationService
-	 */
-	public function injectSchemaMigrationService(\TYPO3\CMS\Install\Service\SqlSchemaMigrationService $schemaMigrationService) {
-		$this->schemaMigrationService = $schemaMigrationService;
 	}
 
 	/**

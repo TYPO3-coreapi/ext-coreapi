@@ -26,20 +26,6 @@ use InvalidArgumentException;
 class DatabaseCompareReal extends DatabaseComparator {
 
 	/**
-	 * @var \TYPO3\CMS\Install\Service\SqlSchemaMigrationService $schemaMigrationService Instance of SQL handler
-	 */
-	protected $schemaMigrationService;
-
-	/**
-	 * Inject the SchemaMigrationService
-	 *
-	 * @param \TYPO3\CMS\Install\Service\SqlSchemaMigrationService $schemaMigrationService
-	 */
-	public function injectSchemaMigrationService(\TYPO3\CMS\Install\Service\SqlSchemaMigrationService $schemaMigrationService) {
-		$this->schemaMigrationService = $schemaMigrationService;
-	}
-
-	/**
 	 * Database compare.
 	 *
 	 * @param string $actions comma separated list of IDs
@@ -49,95 +35,57 @@ class DatabaseCompareReal extends DatabaseComparator {
 	 */
 	public function compare($actions) {
 		$errors = array();
-		$allowedActions = array();
+		$results = array();
 
-		$this->checkAvailableActions($actions, $allowedActions);
+		$allowedActions = $this->getAllowedActions($actions);
 
-//		$classReflection = $this->objectManager->get('TYPO3\\CMS\\Extbase\\Reflection\\ClassReflection', 'Etobi\\CoreAPI\\Service\\DatabaseComparator');
-//		$availableActions = array_flip($classReflection->getConstants());
-//
-//		if (empty($actions)) {
-//			throw new InvalidArgumentException('No compare modes defined');
-//		}
-//
-//		$allowedActions = array();
-//		$actionSplit = $this->trimExplode($actions);
-//		foreach ($actionSplit as $split) {
-//			if (!isset($availableActions[$split])) {
-//				throw new InvalidArgumentException(sprintf('Action "%s" is not available!', $split));
-//			}
-//			$allowedActions[$split] = 1;
-//		}
+		$expectedSchema = $this->sqlExpectedSchemaService->getExpectedDatabaseSchema();
+		$currentSchema = $this->schemaMigrationService->getFieldDefinitions_database();
 
-		$tblFileContent = '';
+		$addCreateChange = $this->schemaMigrationService->getDatabaseExtra($expectedSchema, $currentSchema);
+		$addCreateChange = $this->schemaMigrationService->getUpdateSuggestions($addCreateChange);
 
-		foreach ($GLOBALS['TYPO3_LOADED_EXT'] as $loadedExtConf) {
-			if (is_array($loadedExtConf) && $loadedExtConf['ext_tables.sql']) {
-				$extensionSqlContent = $this->getUrl($loadedExtConf['ext_tables.sql']);
-				$tblFileContent .= LF . LF . LF . LF . $extensionSqlContent;
-			}
+		$dropRemove = $this->schemaMigrationService->getDatabaseExtra($currentSchema, $expectedSchema);
+		$dropRemove = $this->schemaMigrationService->getUpdateSuggestions($dropRemove, 'remove');
+
+		$allowedRequestKeys = $this->getRequestKeys($addCreateChange, $dropRemove);
+
+		if ($allowedActions[self::ACTION_UPDATE_CLEAR_TABLE] == 1) {
+			$results[] = $this->schemaMigrationService->performUpdateQueries($addCreateChange['clear_table'], $allowedRequestKeys);
 		}
 
-		if (is_callable('TYPO3\\CMS\\Core\\Cache\\Cache::getDatabaseTableDefinitions')) {
-			$tblFileContent .= $this->getDatabaseTableDefinitionsFromCache();
+		if ($allowedActions[self::ACTION_UPDATE_ADD] == 1) {
+			$results[] = $this->schemaMigrationService->performUpdateQueries($addCreateChange['add'], $allowedRequestKeys);
 		}
 
-		if (class_exists('TYPO3\\CMS\\Core\\Category\\CategoryRegistry')) {
-			$tblFileContent .= $this->getCategoryRegistry()->getDatabaseTableDefinitions();
+		if ($allowedActions[self::ACTION_UPDATE_CHANGE] == 1) {
+			$results[] = $this->schemaMigrationService->performUpdateQueries($addCreateChange['change'], $allowedRequestKeys);
 		}
 
-		if ($tblFileContent) {
-			$fileContent = implode(LF, $this->schemaMigrationService->getStatementArray($tblFileContent, 1, '^CREATE TABLE '));
-			$fieldDefinitionsFromFile = $this->schemaMigrationService->getFieldDefinitions_fileContent($fileContent);
+		if ($allowedActions[self::ACTION_UPDATE_CREATE_TABLE] == 1) {
+			$results[] = $this->schemaMigrationService->performUpdateQueries($addCreateChange['create_table'], $allowedRequestKeys);
+		}
 
-			$fieldDefinitionsFromDb = $this->schemaMigrationService->getFieldDefinitions_database();
+		if ($allowedActions[self::ACTION_REMOVE_CHANGE] == 1) {
+			$results[] = $this->schemaMigrationService->performUpdateQueries($dropRemove['change'], $allowedRequestKeys);
+		}
 
-			$diff = $this->schemaMigrationService->getDatabaseExtra($fieldDefinitionsFromFile, $fieldDefinitionsFromDb);
-			$updateStatements = $this->schemaMigrationService->getUpdateSuggestions($diff);
+		if ($allowedActions[self::ACTION_REMOVE_DROP] == 1) {
+			$results[] = $this->schemaMigrationService->performUpdateQueries($dropRemove['drop'], $allowedRequestKeys);
+		}
 
-			$diff = $this->schemaMigrationService->getDatabaseExtra($fieldDefinitionsFromDb, $fieldDefinitionsFromFile);
-			$removeStatements = $this->schemaMigrationService->getUpdateSuggestions($diff, 'remove');
+		if ($allowedActions[self::ACTION_REMOVE_CHANGE_TABLE] == 1) {
+			$results[] = $this->schemaMigrationService->performUpdateQueries($dropRemove['change_table'], $allowedRequestKeys);
+		}
 
-			$allowedRequestKeys = $this->getRequestKeys($updateStatements, $removeStatements);
-			$results = array();
+		if ($allowedActions[self::ACTION_REMOVE_DROP_TABLE] == 1) {
+			$results[] = $this->schemaMigrationService->performUpdateQueries($dropRemove['drop_table'], $allowedRequestKeys);
+		}
 
-			if ($allowedActions[self::ACTION_UPDATE_CLEAR_TABLE] == 1) {
-				$results[] = $this->schemaMigrationService->performUpdateQueries($updateStatements['clear_table'], $allowedRequestKeys);
-			}
-
-			if ($allowedActions[self::ACTION_UPDATE_ADD] == 1) {
-				$results[] = $this->schemaMigrationService->performUpdateQueries($updateStatements['add'], $allowedRequestKeys);
-			}
-
-			if ($allowedActions[self::ACTION_UPDATE_CHANGE] == 1) {
-				$results[] = $this->schemaMigrationService->performUpdateQueries($updateStatements['change'], $allowedRequestKeys);
-			}
-
-			if ($allowedActions[self::ACTION_REMOVE_CHANGE] == 1) {
-				$results[] = $this->schemaMigrationService->performUpdateQueries($removeStatements['change'], $allowedRequestKeys);
-			}
-
-			if ($allowedActions[self::ACTION_REMOVE_DROP] == 1) {
-				$results[] = $this->schemaMigrationService->performUpdateQueries($removeStatements['drop'], $allowedRequestKeys);
-			}
-
-			if ($allowedActions[self::ACTION_UPDATE_CREATE_TABLE] == 1) {
-				$results[] = $this->schemaMigrationService->performUpdateQueries($updateStatements['create_table'], $allowedRequestKeys);
-			}
-
-			if ($allowedActions[self::ACTION_REMOVE_CHANGE_TABLE] == 1) {
-				$results[] = $this->schemaMigrationService->performUpdateQueries($removeStatements['change_table'], $allowedRequestKeys);
-			}
-
-			if ($allowedActions[self::ACTION_REMOVE_DROP_TABLE] == 1) {
-				$results[] = $this->schemaMigrationService->performUpdateQueries($removeStatements['drop_table'], $allowedRequestKeys);
-			}
-
-			foreach ($results as $resultSet) {
-				if (is_array($resultSet)) {
-					foreach ($resultSet as $key => $errorMessage) {
-						$errors[$key] = $errorMessage;
-					}
+		foreach ($results as $resultSet) {
+			if (is_array($resultSet)) {
+				foreach ($resultSet as $key => $errorMessage) {
+					$errors[$key] = $errorMessage;
 				}
 			}
 		}
