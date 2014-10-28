@@ -2,7 +2,7 @@
     "name": "etobi/coreapi",
     "description": "Provides a simple to use API for common core features. Goal is to be able to do the most common tasks by CLI instead of doing it in the backend/browser.",
     "type": "typo3-cms-extension",
-    "version": "1.0.0-beta",
+    "version": "1.1.0",
     "keywords": ["typo3", "extension", "deployment", "commandline", "cli"],
     "authors": [
         {
