@@ -76,14 +76,16 @@ class CacheApiCommandController extends CommandController {
 
 	/**
 	 * Clear all caches.
+	 * If hard, cache will be cleared in a more straightforward approach and the according backend hooks are not executed.
 	 *
+	 * @param boolean $hard
 	 * @return void
 	 */
-	public function clearAllCachesCommand() {
-		$this->cacheApiService->clearAllCaches();
-		$message = 'All caches have been cleared.';
+	public function clearAllCachesCommand($hard = false) {
+		$this->cacheApiService->clearAllCaches($hard);
+		$message = 'All caches have been cleared%s.';
 		$this->logger->info($message);
-		$this->outputLine($message);
+		$this->outputLine($message, $hard ? array(' hard') : array(''));
 	}
 
 	/**
