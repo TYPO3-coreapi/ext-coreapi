@@ -48,6 +48,11 @@ class CacheApiService {
 	protected $objectManager;
 
 	/**
+	 * @var \TYPO3\CMS\Install\Service\ClearCacheService
+	 */
+	protected $installToolClearCacheService;
+
+	/**
 	 * @param \TYPO3\CMS\Core\DataHandling\DataHandler $dataHandler
 	 *
 	 * @return void
@@ -63,6 +68,15 @@ class CacheApiService {
 	 */
 	public function injectObjectManager(\TYPO3\CMS\Extbase\Object\ObjectManager $objectManager) {
 		$this->objectManager = $objectManager;
+	}
+
+	/**
+	 * @param \TYPO3\CMS\Install\Service\ClearCacheService $installToolClearCacheService
+	 *
+	 * @return void
+	 */
+	public function injectInstallToolClearCacheService(\TYPO3\CMS\Install\Service\ClearCacheService $installToolClearCacheService) {
+		$this->installToolClearCacheService = $installToolClearCacheService;
 	}
 
 	/**
@@ -84,10 +98,11 @@ class CacheApiService {
 	/**
 	 * Clear all caches.
 	 *
+	 * @param bool $hard
 	 * @return void
 	 */
-	public function clearAllCaches() {
-		$this->dataHandler->clear_cacheCmd('all');
+	public function clearAllCaches($hard = FALSE) {
+		!$hard ? $this->dataHandler->clear_cacheCmd('all') : $this->installToolClearCacheService->clearAll();
 	}
 
 	/**
@@ -106,6 +121,27 @@ class CacheApiService {
 	 */
 	public function clearConfigurationCache() {
 		$this->dataHandler->clear_cacheCmd('temp_cached');
+	}
+
+	/**
+	 * Clear the system cache
+	 *
+	 * @return void
+	 */
+	public function clearSystemCache() {
+		$this->dataHandler->clear_cacheCmd('system');
+	}
+
+	/**
+	 * Clears the opcode cache.
+	 *
+	 * @param string|NULL $fileAbsPath The file as absolute path to be cleared
+	 *                                 or NULL to clear completely.
+	 *
+	 * @return void
+	 */
+	public function clearAllActiveOpcodeCache($fileAbsPath = NULL) {
+		$this->clearAllActiveOpcodeCacheWrapper($fileAbsPath);
 	}
 
 	/**
@@ -133,5 +169,17 @@ class CacheApiService {
 		}
 
 		return $toBeFlushed;
+	}
+
+	/**
+	 * Clears the opcode cache. This just wraps the static call for testing purposes.
+	 *
+	 * @param string|NULL $fileAbsPath The file as absolute path to be cleared
+	 *                                 or NULL to clear completely.
+	 *
+	 * @return void
+	 */
+	protected function clearAllActiveOpcodeCacheWrapper($fileAbsPath) {
+		\TYPO3\CMS\Core\Utility\OpcodeCacheUtility::clearAllActive($fileAbsPath);
 	}
 }

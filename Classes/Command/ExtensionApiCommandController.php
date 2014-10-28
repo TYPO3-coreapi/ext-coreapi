@@ -39,6 +39,32 @@ use TYPO3\CMS\Extbase\Mvc\Controller\CommandController;
 class ExtensionApiCommandController extends CommandController {
 
 	/**
+	 * @var \TYPO3\CMS\Core\Log\LogManager $logManager
+	 */
+	protected $logManager;
+
+	/**
+	 * @var \TYPO3\CMS\Core\Log\Logger $logger
+	 */
+	protected $logger;
+
+	/**
+	 * @param \TYPO3\CMS\Core\Log\LogManager $logManager
+	 *
+	 * @return void
+	 */
+	public function injectLogManager(\TYPO3\CMS\Core\Log\LogManager $logManager) {
+		$this->logManager = $logManager;
+	}
+
+	/**
+	 * Initialize the object
+	 */
+	public function initializeObject() {
+		$this->logger = $this->objectManager->get('\TYPO3\CMS\Core\Log\LogManager')->getLogger(__CLASS__);
+	}
+
+	/**
 	 * @var \Etobi\CoreAPI\Service\ExtensionApiService
 	 * @inject
 	 */
@@ -62,8 +88,10 @@ class ExtensionApiCommandController extends CommandController {
 		try {
 			$data = $this->extensionApiService->getExtensionInformation($key);
 		} catch (Exception $e) {
-			$this->outputLine($e->getMessage());
-			$this->quit();
+			$message = $e->getMessage();
+			$this->outputLine($message);
+			$this->logger->error($message);
+			$this->quit(1);
 		}
 
 		$this->outputLine('');
@@ -107,6 +135,8 @@ class ExtensionApiCommandController extends CommandController {
 			}
 			$this->outputLine('%-2s%-25s %s', array(' ', $outputKey, $description));
 		}
+
+		$this->logger->info('extensionApi:info executes successfully.');
 	}
 
 	/**
@@ -120,8 +150,11 @@ class ExtensionApiCommandController extends CommandController {
 	public function listInstalledCommand($type = '') {
 		$type = ucfirst(strtolower($type));
 		if (!empty($type) && $type !== 'Local' && $type !== 'Global' && $type !== 'System') {
-			$this->outputLine('Only "Local", "System" and "Global" are supported as type (or nothing)');
-			$this->quit();
+			// TODO: Throw a exception here?
+			$message = 'Only "Local", "System" and "Global" are supported as type (or nothing)';
+			$this->outputLine($message);
+			$this->logger->error($message);
+			$this->quit(1);
 		}
 
 		$extensions = $this->extensionApiService->listExtensions($type);
@@ -135,6 +168,7 @@ class ExtensionApiCommandController extends CommandController {
 
 		$this->outputLine('%-2s%-40s', array(' ', str_repeat('-', self::MAXIMUM_LINE_LENGTH - 3)));
 		$this->outputLine('  Total: ' . count($extensions) . ' extensions');
+		$this->logger->info('extensionApi:listInstalled executed successfully');
 	}
 
 	/**
@@ -147,9 +181,13 @@ class ExtensionApiCommandController extends CommandController {
 		$result = $this->extensionApiService->updateMirrors();
 
 		if ($result) {
-			$this->outputLine('Extension list has been updated.');
+			$message = 'Extension list has been updated.';
+			$this->outputLine($message);
+			$this->logger->info($message);
 		} else {
-			$this->outputLine('Extension list already up-to-date.');
+			$message = 'Extension list already up-to-date.';
+			$this->outputLine($message);
+			$this->logger->info($message);
 		}
 	}
 
@@ -165,10 +203,15 @@ class ExtensionApiCommandController extends CommandController {
 			$this->emitPackagesMayHaveChangedSignal();
 			$this->extensionApiService->installExtension($key);
 		} catch (Exception $e) {
-			$this->outputLine($e->getMessage());
-			$this->quit();
+			$message = $e->getMessage();
+			$this->outputLine($message);
+			$this->logger->error($message);
+			$this->quit(1);
 		}
-		$this->outputLine(sprintf('Extension "%s" is now installed!', $key));
+
+		$message = sprintf('Extension "%s" is now installed!', $key);
+		$this->outputLine($message);
+		$this->logger->info($message);
 	}
 
 	/**
@@ -182,10 +225,15 @@ class ExtensionApiCommandController extends CommandController {
 		try {
 			$this->extensionApiService->uninstallExtension($key);
 		} catch (Exception $e) {
-			$this->outputLine($e->getMessage());
-			$this->quit();
+			$message = $e->getMessage();
+			$this->outputLine($message);
+			$this->logger->error($message);
+			$this->quit(1);
 		}
-		$this->outputLine(sprintf('Extension "%s" is now uninstalled!', $key));
+
+		$message = sprintf('Extension "%s" is now uninstalled!', $key);
+		$this->outputLine($message);
+		$this->logger->info($message);
 	}
 
 	/**
@@ -230,16 +278,24 @@ class ExtensionApiCommandController extends CommandController {
 			}
 
 			if (empty($conf)) {
-				throw new InvalidArgumentException(sprintf('No configuration settings!', $key));
+				$this->response->setExitCode(1);
+				$message = sprintf('No configuration settings!', $key);
+				$this->logger->error($message);
+				throw new InvalidArgumentException($message);
 			}
 
 			$this->extensionApiService->configureExtension($key, $conf);
 
 		} catch (Exception $e) {
-			$this->outputLine($e->getMessage());
-			$this->quit();
+			$message = $e->getMessage();
+			$this->outputLine($message);
+			$this->logger->error($message);
+			$this->quit(1);
 		}
-		$this->outputLine(sprintf('Extension "%s" has been configured!', $key));
+
+		$message = sprintf('Extension "%s" has been configured!', $key);
+		$this->outputLine($message);
+		$this->logger->info($message);
 	}
 
 	/**
@@ -256,10 +312,14 @@ class ExtensionApiCommandController extends CommandController {
 	public function fetchCommand($key, $version = '', $location = 'Local', $overwrite = FALSE, $mirror = -1) {
 		try {
 			$data = $this->extensionApiService->fetchExtension($key, $version, $location, $overwrite, $mirror);
-			$this->outputLine(sprintf('Extension "%s" version %s has been fetched from repository! Dependencies were not resolved.', $data['main']['extKey'], $data['main']['version']));
+			$message = sprintf('Extension "%s" version %s has been fetched from repository! Dependencies were not resolved.', $data['main']['extKey'], $data['main']['version']);
+			$this->outputLine($message);
+			$this->logger->info($message);
 		} catch (Exception $e) {
-			$this->outputLine($e->getMessage());
-			$this->quit();
+			$message = $e->getMessage();
+			$this->outputLine($message);
+			$this->logger->error($message);
+			$this->quit(1);
 		}
 	}
 
@@ -277,9 +337,12 @@ class ExtensionApiCommandController extends CommandController {
 				++$key;
 			}
 		} catch (Exception $e) {
-			$this->outputLine($e->getMessage());
-			$this->quit();
+			$message = $e->getMessage();
+			$this->outputLine($message);
+			$this->logger->error($message);
+			$this->quit(1);
 		}
+		$this->logger->info('extensionApi:listMirrors executed successfully.');
 	}
 
 	/**
@@ -294,10 +357,13 @@ class ExtensionApiCommandController extends CommandController {
 	public function importCommand($file, $location = 'Local', $overwrite = FALSE) {
 		try {
 			$data = $this->extensionApiService->importExtension($file, $location, $overwrite);
-			$this->outputLine(sprintf('Extension "%s" has been imported!', $data['extKey']));
+			$message = sprintf('Extension "%s" has been imported!', $data['extKey']);
+			$this->outputLine($message);
+			$this->logger->info($message);
 		} catch (Exception $e) {
 			$this->outputLine($e->getMessage());
-			$this->quit();
+			$this->logger->error($e->getMessage());
+			$this->quit(1);
 		}
 	}
 
