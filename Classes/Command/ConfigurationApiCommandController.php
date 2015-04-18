@@ -25,7 +25,6 @@ namespace Etobi\CoreAPI\Command;
  ***************************************************************/
 
 use TYPO3\CMS\Extbase\Mvc\Controller\CommandController;
-use TYPO3\CMS\Extbase\Reflection\ObjectAccess;
 
 /**
  * Configuration API Command Controller
@@ -36,23 +35,27 @@ use TYPO3\CMS\Extbase\Reflection\ObjectAccess;
 class ConfigurationApiCommandController extends CommandController {
 
 	/**
-	 * listCommand
+	 * @var \Etobi\CoreAPI\Service\ConfigurationApiService
+	 * @inject
+	 */
+	protected $configurationApiService;
+
+	/**
+	 * List all configurations
 	 *
 	 * @return string
 	 */
 	public function listCommand() {
-		$typo3ConfVars = $GLOBALS['TYPO3_CONF_VARS'];
-		$this->outputLine(json_encode($typo3ConfVars));
+		$this->outputLine(json_encode($this->configurationApiService->getConfigurationArray()));
 	}
 
 	/**
-	 * showCommand
+	 * Get configuration value for given key
 	 *
-	 * @param string $param
+	 * @param string $key
 	 * @return string
 	 */
 	public function showCommand($key) {
-		$typo3ConfVars = ObjectAccess::getPropertyPath($GLOBALS['TYPO3_CONF_VARS'], $key);
-		$this->outputLine(json_encode($typo3ConfVars));
+		$this->outputLine(json_encode($this->configurationApiService->getValue($key)));
 	}
 }
