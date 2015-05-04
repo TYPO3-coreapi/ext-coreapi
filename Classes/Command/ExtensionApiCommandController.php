@@ -61,7 +61,7 @@ class ExtensionApiCommandController extends CommandController {
 	 * Initialize the object
 	 */
 	public function initializeObject() {
-		$this->logger = $this->objectManager->get('\TYPO3\CMS\Core\Log\LogManager')->getLogger(__CLASS__);
+		$this->logger = $this->objectManager->get('TYPO3\CMS\Core\Log\LogManager')->getLogger(__CLASS__);
 	}
 
 	/**
