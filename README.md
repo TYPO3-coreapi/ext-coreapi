@@ -23,7 +23,7 @@ Checkout the project website at forge.typo3.org:
 	* fetch an extension from TER
 	* import an extension
 	* install / uninstall extension
-	* create upload folders
+	* ~~create upload folders~~
 	* configure extension
 * SiteApi
 	* info
