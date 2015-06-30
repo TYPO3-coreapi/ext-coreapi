@@ -15,8 +15,8 @@
     ],
     "minimum-stability": "dev",
     "autoload": {
-		"psr-4": {
-			"Etobi\\CoreAPI\\": "Classes/"
-		}
-    }	
+        "psr-4": {
+            "Etobi\\CoreAPI\\": "Classes/"
+        }
+    }
 }
