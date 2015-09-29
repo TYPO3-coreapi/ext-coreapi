@@ -100,16 +100,18 @@ class ExtensionApiCommandController extends CommandController {
 
 		$outputInformation = array();
 		$outputInformation['is installed'] = ($data['is_installed'] ? 'yes' : 'no');
-		foreach ($data['em_conf'] as $emConfKey => $emConfValue) {
-			// Skip empty properties
-			if (empty($emConfValue)) {
-				continue;
-			}
-			// Skip properties which are already handled
-			if ($emConfKey === 'title' || $emConfKey === 'version' || $emConfKey === 'state') {
-				continue;
-			}
-			$outputInformation[$emConfKey] = $emConfValue;
+		if (!empty($data['em_conf'])) {
+		  foreach ($data['em_conf'] as $emConfKey => $emConfValue) {
+		    // Skip empty properties
+		    if (empty($emConfValue)) {
+		      continue;
+		    }
+		    // Skip properties which are already handled
+		    if ($emConfKey === 'title' || $emConfKey === 'version' || $emConfKey === 'state') {
+		      continue;
+		    }
+		    $outputInformation[$emConfKey] = $emConfValue;
+		  }
 		}
 
 		foreach ($outputInformation as $outputKey => $outputValue) {
