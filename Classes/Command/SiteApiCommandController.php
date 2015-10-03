@@ -87,7 +87,7 @@ class SiteApiCommandController extends CommandController {
 		$data = $this->siteApiService->getSiteInfo();
 
 		foreach ($data as $key => $value) {
-			$line = wordwrap($value, self::MAXIMUM_LINE_LENGTH - 43, PHP_EOL . str_repeat(' ', 43), TRUE);
+			$line = wordwrap($value, $this->output->getMaximumLineLength() - 43, PHP_EOL . str_repeat(' ', 43), TRUE);
 			$this->outputLine('%-2s%-40s %s', array(' ', $key, $line));
 		}
 
