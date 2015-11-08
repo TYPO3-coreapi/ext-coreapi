@@ -1,3 +1,4 @@
+sudo: false
 language: php
 php:
   - 5.3
@@ -12,6 +13,14 @@ services:
   - memcached
   - redis-server
 
+addons:
+  apt:
+    packages:
+      # Get latest git version cause of travis issues (https://github.com/travis-ci/travis-ci/issues/1710)
+      - git
+      - parallel
+      - tree
+
 notifications:
   email:
     - blueduck@gmx.net
@@ -20,8 +29,6 @@ notifications:
       - typo3:DHkQdCNWc6x2znPAYA5T2LXO#gsoc-coreapi
 
 before_script:
-  # Get latest git version cause of travis issues (https://github.com/travis-ci/travis-ci/issues/1710)
-  - sudo apt-get update && sudo apt-get install git parallel tree
   - >
     if [[ "$TRAVIS_PHP_VERSION" = "5.3" || "$TRAVIS_PHP_VERSION" = "5.4" ]]; then
         echo "extension = apc.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini;
