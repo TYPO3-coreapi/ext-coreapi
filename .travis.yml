@@ -35,14 +35,22 @@ notifications:
 
 before_script:
   - >
-    if [[ "$TRAVIS_PHP_VERSION" = "5.3" || "$TRAVIS_PHP_VERSION" = "5.4" ]]; then
+    if [[ "$TRAVIS_PHP_VERSION" == "5.3" || "$TRAVIS_PHP_VERSION" == "5.4" ]]; then
         echo "extension = apc.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini;
         echo "apc.enable_cli=1" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini;
         echo "apc.slam_defense=0" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini;
         pecl install igbinary > /dev/null;
     fi
-  - echo "extension = memcache.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
-  - echo "extension = redis.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
+  - >
+    if [[ "$TRAVIS_PHP_VERSION" == "5.5" || "$TRAVIS_PHP_VERSION" == "5.5"]]; then
+      echo "extension = memcache.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini;
+      echo "extension = redis.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini;
+    fi
+  - >
+    if [[ "$TRAVIS_PHP_VERSION" == "hhv*" ]]; then
+      echo "extension = memcache.so" >> /etc/hhvm/php.ini;
+      echo "extension = redis.so" >> /etc/hhvm/php.ini;
+    fi
   - cd ..
   - git clone --single-branch --branch $INTEGRATION --depth 1 git://github.com/TYPO3-coreapi/TYPO3-Travis-Integration.git build-environment
   - source build-environment/install-helper.sh
