@@ -13,5 +13,10 @@
             "name": "Stefano Kowalke"
         }
     ],
-    "minimum-stability": "dev"
+    "minimum-stability": "dev",
+    "autoload": {
+		"psr-4": {
+			"Etobi\\CoreAPI\\": "Classes/"
+		}
+    }	
 }
