@@ -1,16 +1,30 @@
+sudo: false
 language: php
 php:
   - 5.3
   - 5.4
   - 5.5
   - 5.6
+  - hhvm
 
 env:
   - DB=mysql TYPO3=coreapi/develop INTEGRATION=master COVERAGE=0
 
+matrix:
+  allow_failures:
+    - php: hhvm
+
 services:
   - memcached
   - redis-server
+
+addons:
+  apt:
+    packages:
+      # Get latest git version cause of travis issues (https://github.com/travis-ci/travis-ci/issues/1710)
+      - git
+      - parallel
+      - tree
 
 notifications:
   email:
@@ -20,8 +34,6 @@ notifications:
       - typo3:DHkQdCNWc6x2znPAYA5T2LXO#gsoc-coreapi
 
 before_script:
-  # Get latest git version cause of travis issues (https://github.com/travis-ci/travis-ci/issues/1710)
-  - sudo apt-get update && sudo apt-get install git parallel tree
   - >
     if [[ "$TRAVIS_PHP_VERSION" = "5.3" || "$TRAVIS_PHP_VERSION" = "5.4" ]]; then
         echo "extension = apc.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini;
@@ -29,8 +41,16 @@ before_script:
         echo "apc.slam_defense=0" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini;
         pecl install igbinary > /dev/null;
     fi
-  - echo "extension = memcache.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
-  - echo "extension = redis.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
+  - >
+    if [[ "$TRAVIS_PHP_VERSION" = "5.5" || "$TRAVIS_PHP_VERSION" = "5.6" ]]; then
+      echo "extension = memcache.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini;
+      echo "extension = redis.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini;
+    fi
+  - >
+    if [[ "$TRAVIS_PHP_VERSION" = "hhv*" ]]; then
+      echo "extension = memcache.so" >> /etc/hhvm/php.ini;
+      echo "extension = redis.so" >> /etc/hhvm/php.ini;
+    fi
   - cd ..
   - git clone --single-branch --branch $INTEGRATION --depth 1 git://github.com/TYPO3-coreapi/TYPO3-Travis-Integration.git build-environment
   - source build-environment/install-helper.sh

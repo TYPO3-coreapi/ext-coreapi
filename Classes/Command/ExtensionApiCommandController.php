@@ -38,6 +38,8 @@ use TYPO3\CMS\Extbase\Mvc\Controller\CommandController;
  */
 class ExtensionApiCommandController extends CommandController {
 
+  const MAXIMUM_LINE_LENGTH = 79;
+
 	/**
 	 * @var \TYPO3\CMS\Core\Log\LogManager $logManager
 	 */
@@ -61,7 +63,7 @@ class ExtensionApiCommandController extends CommandController {
 	 * Initialize the object
 	 */
 	public function initializeObject() {
-		$this->logger = $this->objectManager->get('\TYPO3\CMS\Core\Log\LogManager')->getLogger(__CLASS__);
+		$this->logger = $this->objectManager->get('TYPO3\CMS\Core\Log\LogManager')->getLogger(__CLASS__);
 	}
 
 	/**
