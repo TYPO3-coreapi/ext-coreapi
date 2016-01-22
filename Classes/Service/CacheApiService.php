@@ -115,6 +115,16 @@ class CacheApiService {
 	}
 
 	/**
+	 * Clear the page cache by tag.
+	 * @param string $tag
+	 * @return void
+	 */
+	public function clearPageCacheByTag($tag)
+	{
+		$this->dataHandler->clear_cacheCmd('cachetag:' . $tag);
+	}
+
+	/**
 	 * Clears the configuration cache.
 	 *
 	 * @return void

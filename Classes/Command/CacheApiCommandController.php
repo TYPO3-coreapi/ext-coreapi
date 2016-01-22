@@ -147,6 +147,20 @@ class CacheApiCommandController extends CommandController {
 	}
 
 	/**
+	 * Clear page cache by Tag.
+	 *
+	 * @param string $tag
+	 * @return void
+	 */
+	public function clearPageCacheByTagCommand($tag)
+	{
+		$this->cacheApiService->clearPageCacheByTag($tag);
+		$message = 'Page cache with tag ' . $tag . ' has been cleared.';
+		$this->logger->info($message);
+		$this->outputLine($message);
+	}
+
+	/**
 	 * Clear all caches except the page cache.
 	 * This is especially useful on big sites when you can't just drop the page cache.
 	 *
