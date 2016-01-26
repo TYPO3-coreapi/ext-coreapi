@@ -180,6 +180,10 @@ class CacheApiService {
 	 * @return void
 	 */
 	protected function clearAllActiveOpcodeCacheWrapper($fileAbsPath) {
-		\TYPO3\CMS\Core\Utility\OpcodeCacheUtility::clearAllActive($fileAbsPath);
+		if (version_compare(TYPO3_version, '7.4.0', '<')) {
+			\TYPO3\CMS\Core\Utility\OpcodeCacheUtility::clearAllActive($fileAbsPath);
+		} else {
+			\TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\CMS\Core\Service\OpcodeCacheService')->clearAllActive($fileAbsPath);
+		}
 	}
 }
