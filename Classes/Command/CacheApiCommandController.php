@@ -161,6 +161,24 @@ class CacheApiCommandController extends CommandController {
 	}
 
 	/**
+	 * clear realurl Cache
+	 */
+	public function clearRealUrlCacheCommand()
+	{
+		if (\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded('realurl')) {
+			$GLOBALS['TYPO3_DB']->sql_query('TRUNCATE TABLE tx_realurl_chashcache;');
+			$GLOBALS['TYPO3_DB']->sql_query('TRUNCATE TABLE tx_realurl_pathcache;');
+			$GLOBALS['TYPO3_DB']->sql_query('TRUNCATE TABLE tx_realurl_uniqalias;');
+			$GLOBALS['TYPO3_DB']->sql_query('TRUNCATE TABLE tx_realurl_urldecodecache;');
+			$GLOBALS['TYPO3_DB']->sql_query('TRUNCATE TABLE tx_realurl_urlencodecache;');
+			$this->logger->info('cleared realURL page cache by coreapi');
+			$this->outputLine('cleared realURL page cache');
+		} else {
+			$this->outputLine('realurl extension not installed, nothing cleared.');
+		}
+	}
+
+	/**
 	 * Clear all caches except the page cache.
 	 * This is especially useful on big sites when you can't just drop the page cache.
 	 *
