@@ -115,7 +115,7 @@ class DatabaseApiCommandController extends CommandController {
 				$this->outputLine($message);
 				$this->logger->info($message);
 			} else {
-				$message = sprintf('DB could not be compared, Error(s): %s', array(LF . implode(LF, $result)));
+				$message = vsprintf('DB could not be compared, Error(s): %s', array(LF . implode(LF, $result)));
 				$this->outputLine($message);
 				$this->logger->error($message);
 				$this->quit(1);
